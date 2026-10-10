@@ -2975,7 +2975,6 @@ function loadAdminApprovals() {
   function processApproval(dbName, itemId, newStatus, btn) { btn.innerText = "..."; btn.disabled = true; google.script.run.withSuccessHandler(res => { if(res.success) { btn.closest('.list-card').remove(); loadAdminAnalytics(); } else { alert("Error: " + res.error); btn.innerText = newStatus; btn.disabled = false; } }).processAdminApproval(loggedInUser, dbName, itemId, newStatus); }
   function attemptLogin() { const e = document.getElementById('userEmail').value, p = document.getElementById('userPassword').value, c = parseInt(document.getElementById('captchaAnswer').value); if(!e || !p) return showLoginError("Credentials required."); if(c !== correctCaptchaAnswer) { showLoginError("Security failed. Please answer the math question."); return generateCaptcha(); } document.getElementById('loginLoading').style.display = 'block'; document.getElementById('loginError').style.display = 'none'; google.script.run.withSuccessHandler(handleLoginResponse).withFailureHandler(function(error) { document.getElementById('loginLoading').style.display = 'none'; showLoginError("System Error: " + error.message); }).verifyLogin(e, p); }
 
-
 function handleLoginResponse(res) { 
     document.getElementById('loginLoading').style.display = 'none';
     if (res.success) { 
@@ -2983,13 +2982,22 @@ function handleLoginResponse(res) {
         document.getElementById('creditBalance').innerText = res.credits; 
         isUserPartner = res.isPartner;
 
-        if (document.getElementById('rememberMe').checked) { 
-            localStorage.setItem('cardsUserEmail', loggedInUser); 
-            localStorage.setItem('cardsUserPass', document.getElementById('userPassword').value);
+        // 🔥 FIX 1: Wrap localStorage in try/catch to bypass iOS Sandbox crash
+        try {
+            if (document.getElementById('rememberMe').checked) { 
+                localStorage.setItem('cardsUserEmail', loggedInUser); 
+                localStorage.setItem('cardsUserPass', document.getElementById('userPassword').value);
+            } else { 
+                localStorage.removeItem('cardsUserEmail'); 
+                localStorage.removeItem('cardsUserPass');
+            }
+        } catch(e) {
+            console.warn("iOS storage blocked, continuing...");
+        }
 
-            // 🔥 NATIVE BRIDGE: Send credentials to Hardware Memory (iOS + Android)
+        // 🔥 NATIVE BRIDGE: Send credentials to Hardware Memory (iOS + Android)
+        try {
             if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.biometricBridge) {
-                // iOS Apple Bridge
                 window.webkit.messageHandlers.biometricBridge.postMessage(JSON.stringify({
                     action: "saveCredentials",
                     email: loggedInUser,
@@ -2999,14 +3007,10 @@ function handleLoginResponse(res) {
                     action: "requestDeviceToken"
                 }));
             } else if (window.AndroidBridge) {
-                // 🤖 NEW: Android Bridge
                 window.AndroidBridge.saveCredentials(loggedInUser, document.getElementById('userPassword').value);
                 window.AndroidBridge.requestDeviceToken();
             }
-        } else { 
-            localStorage.removeItem('cardsUserEmail'); 
-            localStorage.removeItem('cardsUserPass');
-        }
+        } catch(e) {}
 
         currentUserEvents = res.events || []; 
         updateEventDropdowns(); 
@@ -3026,18 +3030,17 @@ function handleLoginResponse(res) {
         } 
         
         checkVDRTracking();
-
         
-        checkVDRTracking();
+        // 🔥 FIX 2: Wrap history to prevent iOS cross-origin security crash
+        try {
+            window.history.replaceState({ tab: 'pulse' }, "", "?tab=pulse");
+        } catch(e) {}
 
-        
-        // 🔥 CRITICAL FIX: Securely anchor the first dashboard view in the browser history!
-        window.history.replaceState({ tab: 'pulse' }, "", "?tab=pulse");
         switchTab('pulse');
         loadTerminalData();
-        loadDispatchBanner(); // 🔥 NEW: Loads the Executive Dispatch Banner
+        loadDispatchBanner();
 
-        // 🔥 NEW: Trigger the Nexus Engine on Login
+        // 🔥 Trigger the Nexus Engine on Login
         google.script.run.withSuccessHandler(nexusRes => {
             if (nexusRes && nexusRes.success && nexusRes.matches.length > 0) {
                 document.getElementById('nexusEngineSection').style.display = 'block';
