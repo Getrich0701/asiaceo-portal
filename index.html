@@ -4977,34 +4977,28 @@ function silentLogView(type, id, targetEmail) {
 }
 
 // --- AI CONCIERGE CONTROLLERS ---
+// --- AI CONCIERGE CONTROLLERS ---
 function toggleAiChat() {
     try {
         var w = document.getElementById('aiConciergeWindow');
         var btnMobile = document.getElementById('aiConciergeBtnMobile');
         
-        if (!w) {
-            alert("System error: AI Window element not found.");
-            return;
-        }
+        if (!w) return;
         
-        // Forcefully calculate the true visibility state, ignoring Wix's iframe rules
         var isHidden = (window.getComputedStyle(w).display === 'none' || w.style.display === 'none' || w.style.display === '');
         
         if (isHidden) {
-            // NUCLEAR OVERRIDE: Force the window open and bring it to the absolute front
             w.style.setProperty('display', 'flex', 'important');
             w.style.setProperty('visibility', 'visible', 'important');
             w.style.setProperty('opacity', '1', 'important');
             w.style.setProperty('z-index', '999999', 'important');
-            
             if(btnMobile) btnMobile.style.transform = 'scale(0.9)';
         } else {
-            // Force it closed
             w.style.setProperty('display', 'none', 'important');
             if(btnMobile) btnMobile.style.transform = 'scale(1)';
         }
     } catch (e) {
-        alert("UI Override Error: " + e.message);
+        console.error("UI Override Error: " + e.message);
     }
 }
 
@@ -5015,13 +5009,11 @@ function toggleDictation() {
     const micBtn = document.getElementById('btnAiMic');
     const inputField = document.getElementById('aiChatInput');
     
-    // If already recording, stop it
     if (isRecordingAi) {
         if (aiSpeechRecognition) aiSpeechRecognition.stop();
         return;
     }
 
-    // Check if the browser supports Speech Recognition
     if (window.SpeechRecognition || window.webkitSpeechRecognition) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         aiSpeechRecognition = new SpeechRecognition();
@@ -5031,33 +5023,38 @@ function toggleDictation() {
 
         aiSpeechRecognition.onstart = function() {
             isRecordingAi = true;
-            micBtn.style.color = "#EF4444"; // Turns red
+            micBtn.style.color = "#EF4444"; 
             micBtn.classList.add('pulse-mic');
             inputField.placeholder = "Listening... Speak now.";
         };
 
         aiSpeechRecognition.onresult = function(event) {
-            const transcript = event.results[0][0].transcript;
-            inputField.value = transcript;
-            
-            // Optional: Automatically send the message after speaking
-            // sendAiMessage(); 
+            inputField.value = event.results[0][0].transcript;
         };
 
         aiSpeechRecognition.onerror = function(event) {
-            console.error("Speech recognition error", event.error);
+            isRecordingAi = false;
+            micBtn.style.color = "var(--accent-gold)";
+            micBtn.classList.remove('pulse-mic');
+            inputField.value = "Mic Error: " + event.error + ". Please type.";
         };
 
         aiSpeechRecognition.onend = function() {
             isRecordingAi = false;
-            micBtn.style.color = "var(--accent-gold)"; // Reverts to gold
+            micBtn.style.color = "var(--accent-gold)";
             micBtn.classList.remove('pulse-mic');
             inputField.placeholder = "Ask me anything...";
         };
 
-        aiSpeechRecognition.start();
+        try {
+            aiSpeechRecognition.start();
+        } catch(e) {
+            inputField.value = "Voice not supported in this app. Please type.";
+        }
     } else {
-        alert("Microphone access is not supported in this browser. Please use Chrome, Safari, or Edge.");
+        // Visually update the text box instead of using an alert popup
+        inputField.value = "Voice not supported in this app. Please type.";
+        micBtn.style.opacity = "0.5";
     }
 }
 
@@ -5786,8 +5783,6 @@ document.addEventListener('DOMContentLoaded', function() {
         aiStartTop = rect.top;
         aiStartX = e.touches[0].clientX;
         aiStartY = e.touches[0].clientY;
-        
-        // Remove transition temporarily so it sticks perfectly to the finger
         aiFloatBtn.style.transition = 'none'; 
     }, { passive: true });
 
@@ -5796,19 +5791,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const dx = touch.clientX - aiStartX;
         const dy = touch.clientY - aiStartY;
         
-        // If the finger moves more than 5 pixels, treat it as a drag (not a tap)
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             aiDragging = true;
-            e.preventDefault(); // Stop the background screen from scrolling
+            e.preventDefault(); 
             
             let newX = aiStartLeft + dx;
             let newY = aiStartTop + dy;
             
-            // Keep the button strictly inside the screen bounds (65px is the button width)
             newX = Math.max(0, Math.min(newX, window.innerWidth - 65)); 
             newY = Math.max(0, Math.min(newY, window.innerHeight - 65));
 
-            // Override the default "right" CSS positioning and use the live X/Y coordinates
             aiFloatBtn.style.right = 'auto'; 
             aiFloatBtn.style.left = newX + 'px';
             aiFloatBtn.style.top = newY + 'px';
@@ -5816,11 +5808,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }, { passive: false });
 
     aiFloatBtn.addEventListener('touchend', () => {
-        // Restore the smooth scaling transition when they let go
         aiFloatBtn.style.transition = 'transform 0.3s'; 
     });
 
-    // CRITICAL: Stop the chat window from opening if they were just dragging the button!
     aiFloatBtn.addEventListener('click', (e) => {
         if (aiDragging) {
             e.preventDefault();
