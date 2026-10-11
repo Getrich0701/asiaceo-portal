@@ -689,8 +689,7 @@
     <div class="input-group"><label>Email Address</label><input type="email" id="userEmail" required></div>
     <div class="input-group"><label>Password <a class="link-text" onclick="openModal('forgotPwdModal')" style="font-size:0.85em; float:right; font-weight:normal; text-transform:none;">Forgot Password?</a></label><input type="password" id="userPassword" required></div>
     <div style="display:flex; align-items:center; margin-bottom:25px; font-size:0.9em; color:var(--secondary-slate);"><input type="checkbox" id="rememberMe" style="width:20px; height:20px; margin:0 10px 0 0; cursor:pointer; accent-color:var(--accent-gold);"><label for="rememberMe" style="cursor:pointer; text-transform:none; margin:0;">Keep me signed in</label></div>
-    <div class="input-group" style="background:var(--primary-navy); padding:15px; border:1px solid var(--border-color); border-radius:8px;"><label>Security: What is <span id="captchaQuestion" style="font-weight:bold; color:var(--accent-gold); font-size:1.1em;"></span>?</label><input type="number" id="captchaAnswer" required></div>
-  
+    
 
 <button onclick="attemptLogin()" class="btn-primary" style="padding:16px; font-size:1em; margin-bottom:10px;">Secure Log In</button>
     
@@ -995,7 +994,6 @@
 
 
 
-    <div class="input-group" style="background:var(--primary-navy); padding:15px; border:1px solid var(--border-color); border-radius:8px;"><label>Security: What is <span id="regCaptchaQuestion" style="font-weight:bold; color:var(--accent-gold); font-size:1.1em;"></span>?</label><input type="number" id="regCaptchaAnswer"></div>
     <div style="margin-bottom: 20px;">
         <label style="display:flex; align-items:flex-start; gap:10px; font-size:0.85em; color:var(--secondary-slate); margin-bottom:10px; cursor:pointer;"><input type="checkbox" id="regTerms" style="width:20px; height:20px; margin:0; flex-shrink:0;"><span>I have read and agree to the <a href="https://www.asiaceo.club/terms-and-conditions" target="_blank" class="link-text">Terms and Conditions</a>.</span></label>
         <label style="display:flex; align-items:flex-start; gap:10px; font-size:0.85em; color:var(--secondary-slate); margin-bottom:10px; cursor:pointer;"><input type="checkbox" id="regPrivacy" style="width:20px; height:20px; margin:0; flex-shrink:0;"><span>I have read and agree to the <a href="https://www.asiaceo.club/privacypolicy" target="_blank" class="link-text">Privacy Policy</a>.</span></label>
@@ -2567,14 +2565,9 @@ function processClaimStep2() {
         document.getElementById('claimLoading').style.display = 'none';
         
         if(res.success) {
-            // Auto-login the user!
             document.getElementById('userEmail').value = email;
             document.getElementById('userPassword').value = pass;
-            
-            // 🔥 CRITICAL FIX: Auto-solve the math CAPTCHA invisibly so they don't get blocked!
-            document.getElementById('captchaAnswer').value = correctCaptchaAnswer;
-            
-            attemptLogin(); // Instantly logs them into the dashboard
+            attemptLogin(); 
         } else {
             btn.innerText = "Secure Account & Log In";
             err.innerText = res.error; err.style.display = 'block';
@@ -2976,8 +2969,30 @@ function loadAdminApprovals() {
 }
 
   function processApproval(dbName, itemId, newStatus, btn) { btn.innerText = "..."; btn.disabled = true; google.script.run.withSuccessHandler(res => { if(res.success) { btn.closest('.list-card').remove(); loadAdminAnalytics(); } else { alert("Error: " + res.error); btn.innerText = newStatus; btn.disabled = false; } }).processAdminApproval(loggedInUser, dbName, itemId, newStatus); }
-  function attemptLogin() { const e = document.getElementById('userEmail').value, p = document.getElementById('userPassword').value, c = parseInt(document.getElementById('captchaAnswer').value); if(!e || !p) return showLoginError("Credentials required."); if(c !== correctCaptchaAnswer) { showLoginError("Security failed. Please answer the math question."); return generateCaptcha(); } document.getElementById('loginLoading').style.display = 'block'; document.getElementById('loginError').style.display = 'none'; google.script.run.withSuccessHandler(handleLoginResponse).withFailureHandler(function(error) { document.getElementById('loginLoading').style.display = 'none'; showLoginError("System Error: " + error.message); }).verifyLogin(e, p); }
+  
+   function attemptLogin() { 
+    const e = document.getElementById('userEmail').value.trim();
+    const p = document.getElementById('userPassword').value; 
+    
+    if(!e || !p) return showLoginError("Credentials required."); 
+    
+    // 🔥 SECURITY UPGRADE: Force Admin/Staff to use OTP email codes instead of passwords
+    if(e.toLowerCase().includes("@asiaceo.club") || e.toLowerCase() === "test@email.com") {
+        document.getElementById('loginView').style.display = 'none'; 
+        document.getElementById('otpView').style.display = 'block';
+        document.getElementById('otpEmail').value = e;
+        return showLoginError("Security Policy: Admin and Staff accounts must use One-Time Passcode to log in.");
+    }
 
+    document.getElementById('loginLoading').style.display = 'block'; 
+    document.getElementById('loginError').style.display = 'none'; 
+    
+    google.script.run.withSuccessHandler(handleLoginResponse).withFailureHandler(function(error) { 
+        document.getElementById('loginLoading').style.display = 'none'; 
+        showLoginError("System Error: " + error.message); 
+    }).verifyLogin(e, p); 
+}
+    
 function handleLoginResponse(res) { 
     document.getElementById('loginLoading').style.display = 'none';
     if (res.success) { 
@@ -3089,17 +3104,19 @@ function submitRegistration() {
     const err = document.getElementById('registerError'); err.style.display = 'none'; 
     const termsBox = document.getElementById('regTerms');
     const privacyBox = document.getElementById('regPrivacy');
+    
     if (!termsBox.checked || !privacyBox.checked) { 
         err.innerText = "You must agree to the Terms and Conditions and Privacy Policy to register.";
         err.style.display = 'block'; return; 
     } 
+    
     const data = { 
         firstName: document.getElementById('regFirstName').value.trim(), 
         lastName: document.getElementById('regLastName').value.trim(), 
         company: document.getElementById('regCompany').value.trim(), 
         title: document.getElementById('regTitle').value.trim(), 
         expertise: document.getElementById('regExpertise').value.trim(), 
-        currentOffer: document.getElementById('regOffer').value.trim(), // 🔥 NEW: Passes "Give" to backend
+        currentOffer: document.getElementById('regOffer').value.trim(), 
         lookingFor: document.getElementById('regLooking').value.trim(), 
         email: document.getElementById('regEmail').value.trim(), 
         password: document.getElementById('regPassword').value, 
@@ -3109,22 +3126,21 @@ function submitRegistration() {
         referredBy: trackedReferrerEmail,
         profilePic: document.getElementById('regHiddenBase64Pic').value 
     };
+    
     if(!data.email.includes("@")) { err.style.display='block'; err.innerText="Invalid email."; return; } 
-    if(parseInt(document.getElementById('regCaptchaAnswer').value) !== correctRegCaptchaAnswer) { 
-        generateRegCaptcha(); err.style.display='block';
-        err.innerText="Security Check Failed. Please answer the math question."; return; 
-    } 
+    
     document.getElementById('btnRegister').disabled = true;
     document.getElementById('registerLoading').style.display = 'block';
+    
     google.script.run.withSuccessHandler(res => { 
         document.getElementById('btnRegister').disabled = false; 
         document.getElementById('registerLoading').style.display = 'none'; 
         if(res === "Success") { showLoginView(); openModal('regSuccessModal'); } 
-        else { err.innerText = res; err.style.display = 'block'; generateRegCaptcha(); } 
+        else { err.innerText = res; err.style.display = 'block'; } 
     }).withFailureHandler(errMsg => { 
         document.getElementById('btnRegister').disabled = false; 
         document.getElementById('registerLoading').style.display = 'none'; 
-        err.innerText = "System Error: " + errMsg.message; err.style.display = 'block'; generateRegCaptcha(); 
+        err.innerText = "System Error: " + errMsg.message; err.style.display = 'block'; 
     }).registerNewUser(data);
 }
 
