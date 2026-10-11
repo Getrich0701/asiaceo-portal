@@ -2697,9 +2697,6 @@ function iosSafeConfirm(title, icon, message, onConfirm) {
 let biometricRequested = false;
 
 function initializePortal() {
-    try { generateCaptcha(); } catch(e) {}
-    try { generateRegCaptcha(); } catch(e) {}
-    
     window.parent.postMessage({ action: 'pageReady' }, "*");
 
    // 🔥 APPLE 3.1.1 COMPLIANCE: Hide all external payment & membership links on iOS
@@ -3188,7 +3185,7 @@ function submitForgotPassword() {
     }).resetPassword(email);
 }
 
-  function showOtpView() { document.getElementById('loginView').style.display = 'none'; document.getElementById('otpView').style.display = 'block'; }
+function showOtpView() { document.getElementById('loginView').style.display = 'none'; document.getElementById('otpView').style.display = 'block'; }
   function requestOTP() { const email = document.getElementById('otpEmail').value; const msgDiv = document.getElementById('otpError'); const successDiv = document.getElementById('otpSuccess'); const btn = document.getElementById('btnSendOtp'); msgDiv.style.display = 'none'; successDiv.style.display = 'none'; if(!email || !email.includes("@")) { msgDiv.innerText = "Please enter a valid email."; msgDiv.style.display = "block"; return; } btn.innerText = "Sending Code..."; btn.disabled = true; document.getElementById('otpLoading').style.display = 'block'; google.script.run.withSuccessHandler(res => { btn.disabled = false; document.getElementById('otpLoading').style.display = 'none'; if(res.success || res.message) { btn.innerText = "Resend Code"; successDiv.innerText = "Passcode sent! Please check your inbox."; successDiv.style.display = "block"; document.getElementById('otpInputSection').style.display = 'block'; document.getElementById('btnVerifyOtp').style.display = 'block'; } else { msgDiv.innerText = res.error || "Failed to send code."; msgDiv.style.display = "block"; btn.innerText = "Send Code to Email"; } }).withFailureHandler(err => { btn.disabled = false; document.getElementById('otpLoading').style.display = 'none'; msgDiv.innerText = "Error: " + err.message; msgDiv.style.display = "block"; }).requestOTP(email); }
   
 function verifyOTP() { 
@@ -3291,16 +3288,11 @@ function verifyOTP() {
     }).verifyOTP(email, otpCode);
 }
 
-function generateCaptcha() { const num1 = Math.floor(Math.random() * 10) + 1; const num2 = Math.floor(Math.random() * 10) + 1; correctCaptchaAnswer = num1 + num2; document.getElementById('captchaQuestion').innerText = num1 + " + " + num2; document.getElementById('captchaAnswer').value = ''; }
-  function generateRegCaptcha() { const num1 = Math.floor(Math.random() * 10) + 1; const num2 = Math.floor(Math.random() * 10) + 1; correctRegCaptchaAnswer = num1 + num2; document.getElementById('regCaptchaQuestion').innerText = num1 + " + " + num2; document.getElementById('regCaptchaAnswer').value = ''; }
-  function showRegisterView() { document.getElementById('loginView').style.display = 'none'; document.getElementById('otpView').style.display = 'none'; document.getElementById('registerView').style.display = 'block'; generateRegCaptcha(); }
-  function showLoginView() { document.getElementById('registerView').style.display = 'none'; document.getElementById('otpView').style.display = 'none'; document.getElementById('loginView').style.display = 'block'; }
-function openModal(m) { 
-      window.scrollTo(0, 0);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      document.getElementById(m).style.display = 'flex'; 
-  }
-  function closeModal(m) { document.getElementById(m).style.display = 'none'; }
+
+    function showRegisterView() { document.getElementById('loginView').style.display = 'none'; document.getElementById('otpView').style.display = 'none'; document.getElementById('registerView').style.display = 'block'; }
+function showLoginView() { document.getElementById('registerView').style.display = 'none'; document.getElementById('otpView').style.display = 'none'; document.getElementById('loginView').style.display = 'block'; }
+function openModal(m) { window.scrollTo(0, 0); window.scrollTo({ top: 0, behavior: 'smooth' }); document.getElementById(m).style.display = 'flex'; }
+function closeModal(m) { document.getElementById(m).style.display = 'none'; }
 
 function populateDropdowns(data) { 
     const ind = document.getElementById('industry'), tit = document.getElementById('title'); 
