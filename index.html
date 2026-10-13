@@ -664,6 +664,22 @@
 }
 
 .sidebar-dropdown-content a.active { background: rgba(212, 175, 55, 0.1); color: var(--accent-gold); font-weight: 600; border: 1px solid rgba(212, 175, 55, 0.3); }
+
+    /* 🔥 MOBILE APP SCROLLING PERFORMANCE & GPU FIX 🔥 */
+.pulse-feed, #chatMessages, .omni-dropdown, #approvalQueueContainer, #warmIntroQueueContainer {
+    -webkit-overflow-scrolling: touch !important; /* Enables buttery-smooth native momentum scrolling on iOS */
+    overscroll-behavior-y: contain !important; /* Stops the inner scroll from fighting the outer page scroll */
+    transform: translate3d(0, 0, 0); /* Forces the phone's Graphics Card (GPU) to render the box, killing lag */
+    will-change: scroll-position;
+}
+
+/* Reduces render load on heavy mobile gradients while scrolling */
+@media screen and (max-width: 768px) {
+    .profile-card, .list-card, .pulse-card {
+        transform: translateZ(0); 
+    }
+}
+    
 </style>
 </head>
 
