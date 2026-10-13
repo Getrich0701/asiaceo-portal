@@ -779,16 +779,16 @@
 <p style="text-align:center; color:var(--secondary-slate); font-size:0.9em; margin-bottom:25px;">Standard Registration is free. Premium Membership Tiers are available upon approval.</p>
     <div id="registerError" class="error-msg"></div>
 
-<!-- 🔥 NEW: Frictionless LinkedIn Onboarding 🔥 -->
+<!-- 🔥 NEW: Frictionless Executive Auto-Fill 🔥 -->
     <div class="input-group" style="background:rgba(212, 175, 55, 0.05); padding:20px; border-radius:12px; border:1px dashed var(--accent-gold); margin-bottom:25px;">
         <label style="color:var(--accent-gold); font-size:0.9em; display:flex; align-items:center; gap:8px;">
-            <span>⚡</span> Auto-Fill via LinkedIn (Optional)
+            <span>⚡</span> Auto-Fill via Work Email (Optional)
         </label>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <input type="url" id="regLinkedInUrl" placeholder="https://linkedin.com/in/username" style="flex:1; min-width:200px; background:var(--bg-dark);">
-            <button class="btn-primary" style="width:auto; padding:12px 24px;" onclick="fetchLinkedInData()" id="btnFetchLinkedIn">Scan & Auto-Fill</button>
+            <input type="email" id="regAutoFillEmail" placeholder="e.g. ceo@yourcompany.com" style="flex:1; min-width:200px; background:var(--bg-dark);">
+            <button class="btn-primary" style="width:auto; padding:12px 24px;" onclick="fetchExecutiveData()" id="btnFetchData">Scan & Auto-Fill</button>
         </div>
-        <p style="font-size:0.8em; color:var(--secondary-slate); margin:8px 0 0 0;">Paste your LinkedIn URL to securely auto-populate your registration details.</p>
+        <p style="font-size:0.8em; color:var(--secondary-slate); margin:8px 0 0 0;">Enter your business email to securely auto-populate your professional profile.</p>
     </div>
     
 <div class="profile-grid">
@@ -3122,29 +3122,30 @@ function handleLoginResponse(res) {
   function showLoginError(msg) { document.getElementById('loginError').innerText = msg; document.getElementById('loginError').style.display = 'block'; }
   function signOut() { localStorage.removeItem('cardsUserEmail'); localStorage.removeItem('cardsUserPass'); window.top.location.href = "https://www.asiaceo.net"; }
   
-function fetchLinkedInData() {
-    const url = document.getElementById('regLinkedInUrl').value.trim();
-    if (!url || !url.includes("linkedin.com/in/")) {
-        alert("Please paste a valid LinkedIn profile URL.");
+function fetchExecutiveData() {
+    const email = document.getElementById('regAutoFillEmail').value.trim();
+    if (!email || !email.includes("@")) {
+        alert("Please enter a valid work email address.");
         return;
     }
     
-    const btn = document.getElementById('btnFetchLinkedIn');
+    const btn = document.getElementById('btnFetchData');
     btn.innerText = "Scanning Network...";
     btn.disabled = true;
 
-    // Send the URL to your secure Wix Backend
+    // Send the Email to your secure Wix Backend
     google.script.run.withSuccessHandler(res => {
         btn.innerText = "Scan & Auto-Fill";
         btn.disabled = false;
         
         if (res && res.success) {
-            // Auto-populate the form fields with the scraped data
             if(res.data.first_name) document.getElementById('regFirstName').value = res.data.first_name;
             if(res.data.last_name) document.getElementById('regLastName').value = res.data.last_name;
             if(res.data.headline) document.getElementById('regTitle').value = res.data.headline.split(' at ')[0];
             if(res.data.company) document.getElementById('regCompany').value = res.data.company;
             if(res.data.country) document.getElementById('regCountry').value = res.data.country;
+            document.getElementById('regEmail').value = email; 
+            
             if(res.data.profile_pic_url) {
                 document.getElementById('regHiddenBase64Pic').value = res.data.profile_pic_url;
                 document.getElementById('regPicPreview').src = res.data.profile_pic_url;
@@ -3158,9 +3159,9 @@ function fetchLinkedInData() {
         btn.innerText = "Scan & Auto-Fill";
         btn.disabled = false;
         alert("Backend Error: " + err.message);
-    }).scrapeLinkedInProfile(url); 
+    }).scrapeExecutiveProfile(email); 
 }
-
+    
 function submitRegistration() { 
     const err = document.getElementById('registerError'); err.style.display = 'none'; 
     const termsBox = document.getElementById('regTerms');
