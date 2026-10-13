@@ -3122,7 +3122,44 @@ function handleLoginResponse(res) {
   function showLoginError(msg) { document.getElementById('loginError').innerText = msg; document.getElementById('loginError').style.display = 'block'; }
   function signOut() { localStorage.removeItem('cardsUserEmail'); localStorage.removeItem('cardsUserPass'); window.top.location.href = "https://www.asiaceo.net"; }
   
+function fetchLinkedInData() {
+    const url = document.getElementById('regLinkedInUrl').value.trim();
+    if (!url || !url.includes("linkedin.com/in/")) {
+        alert("Please paste a valid LinkedIn profile URL.");
+        return;
+    }
+    
+    const btn = document.getElementById('btnFetchLinkedIn');
+    btn.innerText = "Scanning Network...";
+    btn.disabled = true;
 
+    // Send the URL to your secure Wix Backend
+    google.script.run.withSuccessHandler(res => {
+        btn.innerText = "Scan & Auto-Fill";
+        btn.disabled = false;
+        
+        if (res && res.success) {
+            // Auto-populate the form fields with the scraped data
+            if(res.data.first_name) document.getElementById('regFirstName').value = res.data.first_name;
+            if(res.data.last_name) document.getElementById('regLastName').value = res.data.last_name;
+            if(res.data.headline) document.getElementById('regTitle').value = res.data.headline.split(' at ')[0];
+            if(res.data.company) document.getElementById('regCompany').value = res.data.company;
+            if(res.data.country) document.getElementById('regCountry').value = res.data.country;
+            if(res.data.profile_pic_url) {
+                document.getElementById('regHiddenBase64Pic').value = res.data.profile_pic_url;
+                document.getElementById('regPicPreview').src = res.data.profile_pic_url;
+                document.getElementById('regPicPreview').style.display = 'block';
+            }
+            alert("Profile successfully populated!");
+        } else {
+            alert(res.error || "Could not fetch profile data. Please fill manually.");
+        }
+    }).withFailureHandler(err => {
+        btn.innerText = "Scan & Auto-Fill";
+        btn.disabled = false;
+        alert("Backend Error: " + err.message);
+    }).scrapeLinkedInProfile(url); 
+}
 
 function submitRegistration() { 
     const err = document.getElementById('registerError'); err.style.display = 'none'; 
