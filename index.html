@@ -774,14 +774,23 @@
     </div>
   </div> 
 
-
 <div id="registerView" style="display:none;" class="container">
     <div class="company-header" style="text-align:center;">Asia CEO Community</div><h2 style="border:none; text-align:center; width:100%;">New Registration</h2>
 <p style="text-align:center; color:var(--secondary-slate); font-size:0.9em; margin-bottom:25px;">Standard Registration is free. Premium Membership Tiers are available upon approval.</p>
     <div id="registerError" class="error-msg"></div>
 
-
-
+<!-- 🔥 NEW: Frictionless LinkedIn Onboarding 🔥 -->
+    <div class="input-group" style="background:rgba(212, 175, 55, 0.05); padding:20px; border-radius:12px; border:1px dashed var(--accent-gold); margin-bottom:25px;">
+        <label style="color:var(--accent-gold); font-size:0.9em; display:flex; align-items:center; gap:8px;">
+            <span>⚡</span> Auto-Fill via LinkedIn (Optional)
+        </label>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input type="url" id="regLinkedInUrl" placeholder="https://linkedin.com/in/username" style="flex:1; min-width:200px; background:var(--bg-dark);">
+            <button class="btn-primary" style="width:auto; padding:12px 24px;" onclick="fetchLinkedInData()" id="btnFetchLinkedIn">Scan & Auto-Fill</button>
+        </div>
+        <p style="font-size:0.8em; color:var(--secondary-slate); margin:8px 0 0 0;">Paste your LinkedIn URL to securely auto-populate your registration details.</p>
+    </div>
+    
 <div class="profile-grid">
       <div class="input-group"><label>First Name <span style="color:#EF4444;">*</span></label><input type="text" id="regFirstName"></div>
       <div class="input-group"><label>Last Name <span style="color:#EF4444;">*</span></label><input type="text" id="regLastName"></div>
@@ -2299,7 +2308,9 @@
 <div id="withdrawModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeModal('withdrawModal')">×</button><h3 style="margin-top:0;">Request Payout</h3><p style="color:var(--secondary-slate); margin-bottom:20px;">Amount available: <strong id="withdrawAmountDisplay" style="color:var(--accent-gold);"></strong></p><div class="input-group"><label>Bank Name</label><input type="text" id="bankName"></div><div class="input-group"><label>Account Name</label><input type="text" id="bankAccName"></div><div class="input-group"><label>Account Number</label><input type="text" id="bankAccNum"></div><div class="profile-grid"><div class="input-group"><label>SWIFT Code</label><input type="text" id="bankSwift"></div><div class="input-group"><label>Country</label><input type="text" id="bankCountry"></div></div><div class="input-group"><label>Bank Address</label><textarea id="bankAddress" rows="2"></textarea></div><button onclick="submitWithdrawal()" class="btn-primary" id="btnSubmitWithdraw">Submit Request</button><div id="withdrawMsg" style="margin-top:15px; font-weight:600; text-align:center;"></div></div></div>
 <div id="noEventsModal" class="modal-overlay"><div class="modal-content" style="text-align:center;"><button class="close-modal" onclick="closeModal('noEventsModal')">×</button><h3 style="color:var(--text-light); border:none; margin-bottom:10px; margin-top:0;">Event Required</h3><p style="font-size:0.95em; color:var(--secondary-slate); margin-bottom:25px; line-height:1.5;">You currently have no active upcoming events.<br><br>To utilize the Guest Invitation engine, please register an event first.</p><button class="btn-primary" onclick="closeModal('noEventsModal'); switchTab('promote');">Create an Event</button></div></div>
 <div id="bulkConfirmModal" class="modal-overlay" style="align-items:flex-start; padding-top:10vh;"><div class="modal-content" style="text-align:center;"><button class="close-modal" onclick="closeModal('bulkConfirmModal')">×</button><h3 style="color:var(--text-light); border:none; margin-bottom:10px; margin-top:0;">Confirm Invitations</h3><p style="font-size:1.05em; color:var(--secondary-slate);">You are about to invite <strong id="bulkCount" style="color:var(--accent-gold); font-size:1.2em;">0</strong> executives to: <br><strong id="bulkEventName" style="color:var(--text-light); display:block; margin-top:5px;"></strong></p><div style="background:rgba(239, 68, 68, 0.1); padding:15px; border-radius:8px; border-left:4px solid #EF4444; text-align:left; margin:25px 0; font-size:0.95em; color:var(--text-light);"><strong>Notice:</strong> This action will permanently deduct <strong id="bulkCreditCost">0</strong> credits from your account.</div><button class="btn-primary" id="btnExecuteBulk" onclick="executeBulkInvite()" style="margin-bottom:10px;">Yes, Send Invitations</button><button class="btn-secondary" onclick="closeModal('bulkConfirmModal')" style="border-color:var(--secondary-slate); color:var(--secondary-slate);">Cancel</button></div></div>
-<div id="editEventModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeModal('editEventModal')">×</button><h3 style="color:var(--text-light); margin-top:0;">Edit Event</h3><input type="hidden" id="editEvtId"><div class="profile-grid"><div class="input-group"><label>Event Title</label><input type="text" id="editEvtTitle" required></div>
+<div id="editEventModal" class="modal-overlay"><div class="modal-content"><button class="close-modal" onclick="closeModal('editEventModal')">×</button><h3 style="color:var(--text-light); margin-top:0;">Edit Event</h3><input type="hidden" id="editEvtId">
+    
+    <div class="profile-grid"><div class="input-group"><label>Event Title</label><input type="text" id="editEvtTitle" required></div>
 
 <div class="input-group"><label>Event Date</label><input type="date" id="editEvtDate" lang="en-US" required></div><div class="input-group"><label>Time</label><input type="text" id="editEvtTime" required></div><div class="input-group"><label>Location</label><input type="text" id="editEvtLocation" required></div></div><div class="input-group"><label>Description</label><textarea id="editEvtDesc" rows="4"></textarea></div><button onclick="saveEditedEvent()" class="btn-primary" id="btnSaveEditedEvent">Save Changes</button><div id="editEventMsg" style="margin-top:15px; text-align:center; font-weight:bold;"></div></div></div>
 <div id="ndaModal" class="modal-overlay" style="align-items: flex-start; padding-top: 50px;">
