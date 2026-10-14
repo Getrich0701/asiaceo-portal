@@ -2724,10 +2724,11 @@ function iosSafeConfirm(title, icon, message, onConfirm) {
       if (window.innerWidth <= 1024 && !e.target.closest('.sidebar-dropdown')) { closeAllMobileDropdowns(); }
   });
 
-let portalInitialized = false; // 🔥 Prevents the 3x execution bug
+let portalInitialized = false; // 🔥 THIS STOPS THE LOGIN LOOP CRASH
 let biometricRequested = false;
 
 function initializePortal() {
+    // 🔥 If it already ran, stop it from running again!
     if (portalInitialized) return; 
     portalInitialized = true;
 
@@ -2736,17 +2737,12 @@ function initializePortal() {
    // 🔥 APPLE 3.1.1 COMPLIANCE: Hide all external payment & membership links on iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     if (isIOS) {
-        // 1. Hide Top-Bar Credits / Billing Button
         let billingBtn = document.getElementById('btnBillingNav');
         if (billingBtn) billingBtn.style.display = 'none';
-
-        // 2. Hide Membership Dropdown from Sidebar
         let membershipBtn = document.getElementById('tabGroupMembership');
         if (membershipBtn && membershipBtn.parentElement) {
             membershipBtn.parentElement.style.display = 'none';
         }
-
-        // 3. Hide all external upgrade / checkout links across the entire UI
         document.querySelectorAll('.ios-hide-link').forEach(el => el.style.display = 'none');
     }
     
@@ -2756,8 +2752,6 @@ function initializePortal() {
     // 2. Fetch main dropdowns AND hide splash screen only after data arrives!
     google.script.run.withSuccessHandler(res => {
         populateDropdowns(res);
-        
-        // 🔥 REAL SPLASH SCREEN REMOVER: Waits until the database actually connects!
         setTimeout(function() {
             const splash = document.getElementById('globalSplashScreen');
             if (splash) {
@@ -2766,7 +2760,6 @@ function initializePortal() {
             }
         }, 500); 
     }).withFailureHandler(err => {
-        // Failsafe: hide if offline
         const splash = document.getElementById('globalSplashScreen');
         if (splash) splash.style.display = 'none';
     }).getDropdownOptions(); 
@@ -2783,8 +2776,9 @@ function initializePortal() {
         }
     }
 
-    if (localStorage.getItem('cardsUserEmail')) { 
-        // 🔥 Immediately hide login UI so it doesn't flicker while auto-connecting
+    // 🔥 AUTO LOGIN ENGINE
+    if (localStorage.getItem('cardsUserEmail') && localStorage.getItem('cardsUserPass')) { 
+        // Instantly hide the login screen so the user never sees it
         document.getElementById('loginView').style.display = 'none';
         document.getElementById('authContainer').style.display = 'none';
 
@@ -2792,12 +2786,10 @@ function initializePortal() {
         document.getElementById('userPassword').value = localStorage.getItem('cardsUserPass');
         document.getElementById('rememberMe').checked = true;
         
-        // 🔥 Will only fire exactly ONCE now because of the portalInitialized flag
-        attemptLogin();
+        attemptLogin(); 
     }
 
     // 🔥 ULTIMATE SPLASH SCREEN FAILSAFE 🔥
-    // If the database is slow or a script fails, force the app open after 5 seconds!
     setTimeout(function() {
         const splash = document.getElementById('globalSplashScreen');
         if (splash && splash.style.display !== 'none') {
@@ -2806,6 +2798,13 @@ function initializePortal() {
         }
     }, 5000); 
 }
+
+// 1. Run instantly the exact millisecond the script is read
+initializePortal();
+// 2. Run again 0.5s later as a backup
+setTimeout(initializePortal, 500);
+// 3. Run again 1.5s later as the ultimate failsafe
+setTimeout(initializePortal, 1500);
 
 // Function to allow manual FaceID/Fingerprint triggering
 function triggerManualFaceID() {
@@ -3129,7 +3128,6 @@ function handleLoginResponse(res) {
 
     } else { 
         showLoginError(res.error || "Invalid Credentials"); 
-        generateCaptcha();
     } 
 }
 
