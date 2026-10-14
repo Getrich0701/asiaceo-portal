@@ -5917,42 +5917,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, true); 
 });
-
-// ==========================================
-// PERSISTENT SESSION AUTO-LOADER
-// ==========================================
-window.addEventListener('DOMContentLoaded', () => {
-    const savedEmail = localStorage.getItem('portalUserEmail');
-    const isLoggedIn = localStorage.getItem('portalIsLoggedIn');
-
-    // If the device remembers the user, bypass the login screen
-    if (isLoggedIn === 'true' && savedEmail) {
-        console.log("Session found! Auto-restoring user:", savedEmail);
-        
-        // Show a quick loading state so the user isn't staring at a blank login box
-        document.getElementById('loginSection').style.display = 'none';
-        
-        // Call your existing function that loads the main dashboard
-        // Note: Change 'loadDashboard' to whatever function you normally call to build the portal (e.g., fetchUserProfile or initPortal)
-        loadMainPortal(savedEmail); 
-    }
-});
-
-// Helper function to bridge the auto-login
-function loadMainPortal(email) {
-    currentUserEmail = email;
-    // Re-verify the user quietly in the background to ensure they aren't suspended
-    google.script.run.withSuccessHandler(res => {
-        if (res && res.success) {
-            // Setup the dashboard exactly as if they just clicked "Login"
-            showDashboard();
-            populateUserData(res);
-        } else {
-            // If the backend rejects them (e.g., suspended), wipe the memory and show login
-            logout(); 
-        }
-    }).verifyLogin(email, "AUTO_BYPASS", true); // Pass a flag if your backend supports bypassing passwords on auto-login
-}
     
 </script>
 </body>
