@@ -354,12 +354,10 @@
       background: var(--accent-gold);
   }
 
+/* FIX: Standardized iOS scrolling boundaries */
 html, body { 
     font-family:'Inter',sans-serif; padding:0; margin:0; background-color:var(--bg-dark); color:var(--text-light); 
     -webkit-font-smoothing:antialiased; width: 100%; min-height: 100vh; overflow-x: hidden;
-    
-    /* 🔥 THIS NATIVELY STOPS PULL-TO-REFRESH WITHOUT FREEZING THE SCREEN 🔥 */
-    overscroll-behavior-y: none;
 }
     
     
