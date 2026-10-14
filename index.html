@@ -30,20 +30,26 @@
    ========================================== */
 .dispatch-banner {
     position: relative;
-    background: linear-gradient(135deg, rgba(13, 38, 68, 0.95), rgba(5, 16, 33, 0.98));
+    background: linear-gradient(135deg, rgba(13, 38, 68, 0.98), rgba(5, 16, 33, 1));
     border-radius: 12px;
     padding: 20px 25px;
     margin-bottom: 25px;
-    display: none; /* Hidden by default until loaded */
+    display: none; 
     align-items: center;
     justify-content: space-between;
     gap: 20px;
     border-left: 4px solid var(--accent-gold);
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    backdrop-filter: blur(10px);
     overflow: hidden;
     animation: slideDownNav 0.4s ease-out forwards;
+    
+    /* 🔥 IOS MOBILE SCROLL TRAP FIX 🔥 */
+    transform: translate3d(0, 0, 0); 
+    touch-action: pan-y; 
+    -webkit-user-select: none;
+    user-select: none;
 }
+
 .dispatch-banner::before {
     content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
