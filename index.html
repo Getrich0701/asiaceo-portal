@@ -2378,23 +2378,6 @@ html, body {
 </div>
 
 <script>
-    // ==========================================
-    // PREVENT PULL-TO-REFRESH & ACCIDENTAL RELOAD
-    // ==========================================
-    let touchStartY = 0;
-    document.addEventListener('touchstart', e => {
-        touchStartY = e.touches[0].clientY;
-    }, { passive: false });
-
-    document.addEventListener('touchmove', e => {
-        const touchY = e.touches[0].clientY;
-        const touchDiff = touchY - touchStartY;
-        // If user is at the top of the page and pulls down, block default reload
-        if (window.scrollY === 0 && touchDiff > 0) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-
 
 function clearAllNotifications(e) { e.stopPropagation(); document.getElementById('notifDropdown').innerHTML = '<div style="padding:15px; text-align:center; color:var(--secondary-slate); font-size:0.9em;">All caught up!</div>'; }
 
@@ -2741,9 +2724,13 @@ function iosSafeConfirm(title, icon, message, onConfirm) {
       if (window.innerWidth <= 1024 && !e.target.closest('.sidebar-dropdown')) { closeAllMobileDropdowns(); }
   });
 
+let portalInitialized = false; // 🔥 Prevents the 3x execution bug
 let biometricRequested = false;
 
 function initializePortal() {
+    if (portalInitialized) return; 
+    portalInitialized = true;
+
     window.parent.postMessage({ action: 'pageReady' }, "*");
 
    // 🔥 APPLE 3.1.1 COMPLIANCE: Hide all external payment & membership links on iOS
@@ -2796,12 +2783,16 @@ function initializePortal() {
         }
     }
 
- if (localStorage.getItem('cardsUserEmail')) { 
+    if (localStorage.getItem('cardsUserEmail')) { 
+        // 🔥 Immediately hide login UI so it doesn't flicker while auto-connecting
+        document.getElementById('loginView').style.display = 'none';
+        document.getElementById('authContainer').style.display = 'none';
+
         document.getElementById('userEmail').value = localStorage.getItem('cardsUserEmail');
         document.getElementById('userPassword').value = localStorage.getItem('cardsUserPass');
         document.getElementById('rememberMe').checked = true;
         
-        // 🔥 ADD THIS ONE LINE: Forces the app to auto-login silently in the background
+        // 🔥 Will only fire exactly ONCE now because of the portalInitialized flag
         attemptLogin();
     }
 
