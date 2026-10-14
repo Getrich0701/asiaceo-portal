@@ -3288,8 +3288,36 @@ function verifyOTP() {
             document.getElementById('creditBalance').innerText = res.credits; 
             isUserPartner = res.isPartner; 
          
-            localStorage.removeItem('cardsUserEmail'); 
-            localStorage.removeItem('cardsUserPass'); 
+            // 🔥 FIX: Automatically save credentials during OTP login for Biometrics
+            document.getElementById('rememberMe').checked = true;
+            // Provide a secure fallback password for OTP users so the biometric bridge accepts the save request
+            const userPass = document.getElementById('userPassword').value || "BIOMETRIC_AUTH_OTP";
+
+            // Save to local storage for auto-login
+            try {
+                localStorage.setItem('cardsUserEmail', loggedInUser); 
+                localStorage.setItem('cardsUserPass', userPass);
+            } catch(e) {
+                console.warn("iOS storage blocked");
+            }
+
+            // 🔥 NATIVE BRIDGE: Trigger hardware biometric enrollment on OTP success
+            try {
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.biometricBridge) {
+                    window.webkit.messageHandlers.biometricBridge.postMessage(JSON.stringify({
+                        action: "saveCredentials",
+                        email: loggedInUser,
+                        pass: userPass
+                    }));
+                    window.webkit.messageHandlers.biometricBridge.postMessage(JSON.stringify({
+                        action: "requestDeviceToken"
+                    }));
+                } else if (window.AndroidBridge) {
+                    window.AndroidBridge.saveCredentials(loggedInUser, userPass);
+                    window.AndroidBridge.requestDeviceToken();
+                }
+            } catch(e) {}
+
             currentUserEvents = res.events || []; 
             updateEventDropdowns(); 
             
@@ -3309,15 +3337,14 @@ function verifyOTP() {
                 renderCards(res.recommendations.slice(0, 3), 'recCards', false); 
             } 
             
-           checkVDRTracking();
+            checkVDRTracking();
             let urlParams = new URLSearchParams(window.location.search);
             let targetTab = urlParams.get('tab') || 'pulse';
             window.history.replaceState({ tab: targetTab }, "", "?tab=" + targetTab);
             switchTab(targetTab, true);
             loadTerminalData();
-            loadDispatchBanner(); // 🔥 NEW: Loads the Executive Dispatch Banner
+            loadDispatchBanner(); 
             
-          
             // 🔥 NEW: Trigger the Nexus Engine on OTP Login
             google.script.run.withSuccessHandler(nexusRes => {
                 if (nexusRes && nexusRes.success && nexusRes.matches.length > 0) {
