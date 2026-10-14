@@ -354,11 +354,15 @@
   }
 
 
-/* FIX: Liberated iOS scrolling bounds. Let the native browser handle overflow. */
-  html, body { 
-      font-family:'Inter',sans-serif; padding:0; margin:0; background-color:var(--bg-dark); color:var(--text-light); 
-      -webkit-font-smoothing:antialiased; width: 100%; min-height: 100vh; overflow-x: clip;
-  }
+/* FIX: Liberated iOS scrolling bounds + Block unwanted pull-to-refresh reload */
+html, body { 
+    font-family:'Inter',sans-serif; padding:0; margin:0; background-color:var(--bg-dark); color:var(--text-light); 
+    -webkit-font-smoothing:antialiased; width: 100%; min-height: 100vh; overflow-x: clip;
+    
+    /* 🛑 STOPS PULL-TO-REFRESH & ACCIDENTAL LOGOUTS */
+    overscroll-behavior-y: contain;
+    overscroll-behavior-x: none;
+}
   
   h1, h2, h3, .company-header, .card-title h4, .list-card-title, .omni-category-header, .sidebar-logo { font-family: 'Playfair Display', serif !important; color: var(--text-light); }
   
@@ -2374,6 +2378,22 @@
 </div>
 
 <script>
+    // ==========================================
+    // PREVENT PULL-TO-REFRESH & ACCIDENTAL RELOAD
+    // ==========================================
+    let touchStartY = 0;
+    document.addEventListener('touchstart', e => {
+        touchStartY = e.touches[0].clientY;
+    }, { passive: false });
+
+    document.addEventListener('touchmove', e => {
+        const touchY = e.touches[0].clientY;
+        const touchDiff = touchY - touchStartY;
+        // If user is at the top of the page and pulls down, block default reload
+        if (window.scrollY === 0 && touchDiff > 0) {
+            e.preventDefault();
+        }
+    }, { passive: false });
 
 
 function clearAllNotifications(e) { e.stopPropagation(); document.getElementById('notifDropdown').innerHTML = '<div style="padding:15px; text-align:center; color:var(--secondary-slate); font-size:0.9em;">All caught up!</div>'; }
@@ -2776,10 +2796,13 @@ function initializePortal() {
         }
     }
 
-  if (localStorage.getItem('cardsUserEmail')) { 
+ if (localStorage.getItem('cardsUserEmail')) { 
         document.getElementById('userEmail').value = localStorage.getItem('cardsUserEmail');
         document.getElementById('userPassword').value = localStorage.getItem('cardsUserPass');
         document.getElementById('rememberMe').checked = true;
+        
+        // 🔥 ADD THIS ONE LINE: Forces the app to auto-login silently in the background
+        attemptLogin();
     }
 
     // 🔥 ULTIMATE SPLASH SCREEN FAILSAFE 🔥
@@ -5894,6 +5917,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, true); 
 });
+
+// ==========================================
+// PERSISTENT SESSION AUTO-LOADER
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    const savedEmail = localStorage.getItem('portalUserEmail');
+    const isLoggedIn = localStorage.getItem('portalIsLoggedIn');
+
+    // If the device remembers the user, bypass the login screen
+    if (isLoggedIn === 'true' && savedEmail) {
+        console.log("Session found! Auto-restoring user:", savedEmail);
+        
+        // Show a quick loading state so the user isn't staring at a blank login box
+        document.getElementById('loginSection').style.display = 'none';
+        
+        // Call your existing function that loads the main dashboard
+        // Note: Change 'loadDashboard' to whatever function you normally call to build the portal (e.g., fetchUserProfile or initPortal)
+        loadMainPortal(savedEmail); 
+    }
+});
+
+// Helper function to bridge the auto-login
+function loadMainPortal(email) {
+    currentUserEmail = email;
+    // Re-verify the user quietly in the background to ensure they aren't suspended
+    google.script.run.withSuccessHandler(res => {
+        if (res && res.success) {
+            // Setup the dashboard exactly as if they just clicked "Login"
+            showDashboard();
+            populateUserData(res);
+        } else {
+            // If the backend rejects them (e.g., suspended), wipe the memory and show login
+            logout(); 
+        }
+    }).verifyLogin(email, "AUTO_BYPASS", true); // Pass a flag if your backend supports bypassing passwords on auto-login
+}
     
 </script>
 </body>
