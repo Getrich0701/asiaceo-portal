@@ -42,13 +42,14 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     overflow: hidden;
     animation: slideDownNav 0.4s ease-out forwards;
-}
+} /* 🔥 PUT THIS CLOSING BRACKET BACK 🔥 */
 
 .dispatch-banner::before {
     content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
     animation: sweep 5s infinite; pointer-events: none;
 }
+
 .dispatch-icon { font-size: 2.2em; flex-shrink: 0; filter: drop-shadow(0 0 10px rgba(212,175,55,0.3)); }
 .dispatch-content { flex: 1; }
 .dispatch-title { font-family: 'Playfair Display', serif; color: var(--accent-gold); font-size: 1.2em; font-weight: 700; margin: 0 0 5px 0; letter-spacing: 0.5px; }
