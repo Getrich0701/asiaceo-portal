@@ -355,14 +355,10 @@
   }
 
 
-/* FIX: Liberated iOS scrolling bounds + Block unwanted pull-to-refresh reload */
+/* FIX: Standardized iOS scrolling boundaries */
 html, body { 
     font-family:'Inter',sans-serif; padding:0; margin:0; background-color:var(--bg-dark); color:var(--text-light); 
-    -webkit-font-smoothing:antialiased; width: 100%; min-height: 100vh; overflow-x: clip;
-    
-    /* 🛑 STOPS PULL-TO-REFRESH & ACCIDENTAL LOGOUTS */
-    overscroll-behavior-y: contain;
-    overscroll-behavior-x: none;
+    -webkit-font-smoothing:antialiased; width: 100%; min-height: 100vh; overflow-x: hidden;
 }
   
   h1, h2, h3, .company-header, .card-title h4, .list-card-title, .omni-category-header, .sidebar-logo { font-family: 'Playfair Display', serif !important; color: var(--text-light); }
