@@ -354,15 +354,14 @@
       background: var(--accent-gold);
   }
 
-/* FIX: Standardized iOS/Android scrolling boundaries */
 html, body { 
     font-family:'Inter',sans-serif; padding:0; margin:0; background-color:var(--bg-dark); color:var(--text-light); 
     -webkit-font-smoothing:antialiased; width: 100%; min-height: 100vh; overflow-x: hidden;
     
-    /* 🔥 ANDROID/IOS ULTIMATE PULL-TO-REFRESH KILL-SWITCH 🔥 */
-    overscroll-behavior: none !important;
-    overscroll-behavior-y: none !important;
+    /* 🔥 THIS NATIVELY STOPS PULL-TO-REFRESH WITHOUT FREEZING THE SCREEN 🔥 */
+    overscroll-behavior-y: none;
 }
+    
     
   h1, h2, h3, .company-header, .card-title h4, .list-card-title, .omni-category-header, .sidebar-logo { font-family: 'Playfair Display', serif !important; color: var(--text-light); }
   
