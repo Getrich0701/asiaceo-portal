@@ -5996,7 +5996,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillText("VIP ALL-ACCESS PASS", canvas.width/2, 1600);
 
             // 4. Extract Image Data
-            const finalImage = canvas.toDataURL("image/png", 1.0);
+          const finalImage = canvas.toDataURL("image/jpeg", 0.85);
             
             // 5. Open iPhone Native Save Modal
             showIosDownloadModal(finalImage);
@@ -6013,24 +6013,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-// iPhone Save Modal UI (GPU Optimized for Smooth Scrolling)
+// iPhone Save Modal UI (Memory Optimized & Scroll Bleed Fixed)
 function showIosDownloadModal(imgDataUrl) {
     let existingModal = document.getElementById('iosDownloadModal');
     if (existingModal) existingModal.remove();
 
+    // Lock the background from scrolling while the modal is open
+    document.body.style.overflow = 'hidden';
+
     const modalHtml = `
-    <div id="iosDownloadModal" class="modal-overlay" style="display:flex; z-index:9999999; flex-direction:column; align-items:center; padding:40px 20px; background:rgba(5, 16, 33, 0.98); overflow-y:auto; -webkit-overflow-scrolling:touch; justify-content:flex-start;">
-        <div style="width:100%; max-width:320px; display:flex; justify-content:flex-end; margin-bottom:10px; flex-shrink:0;">
-            <button onclick="document.getElementById('iosDownloadModal').remove()" style="background:none; border:none; color:var(--text-light); font-size:2.5em; cursor:pointer; line-height:1; padding:0;">&times;</button>
+    <div id="iosDownloadModal" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999999; background:var(--bg-dark); overflow-y:scroll; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; display:block; padding: 40px 20px; box-sizing:border-box;">
+        <div style="max-width:340px; margin:0 auto; display:flex; flex-direction:column; align-items:center;">
+            <div style="width:100%; display:flex; justify-content:flex-end; margin-bottom:10px;">
+                <button onclick="closeIosDownloadModal()" style="background:none; border:none; color:var(--text-light); font-size:2.5em; cursor:pointer; line-height:1; padding:0;">&times;</button>
+            </div>
+            <h3 style="color:var(--accent-gold); margin:0 0 10px 0; border:none; padding:0; text-align:center;">Your VIP Pass is Ready</h3>
+            <p style="color:var(--text-light); font-size:0.95em; text-align:center; margin:0 0 25px 0; line-height:1.5;">📱 <b>Long-press</b> the image below and select <b>"Save to Photos"</b>, then set it as your Lock Screen.</p>
+            
+            <img src="${imgDataUrl}" style="width:100%; border-radius:16px; border:2px solid var(--accent-gold); box-shadow:0 15px 40px rgba(0,0,0,0.8); display:block; margin-bottom:50px;">
         </div>
-        <h3 style="color:var(--accent-gold); margin:0 0 10px 0; border:none; padding:0; flex-shrink:0; text-align:center;">Your VIP Pass is Ready</h3>
-        <p style="color:var(--text-light); font-size:0.95em; text-align:center; margin:0 0 25px 0; line-height:1.5; flex-shrink:0; max-width:320px;">📱 <b>Long-press</b> the image below and select <b>"Save to Photos"</b>, then set it as your Lock Screen.</p>
-        
-        <img src="${imgDataUrl}" style="width:100%; max-width:320px; border-radius:16px; border:2px solid var(--accent-gold); box-shadow:0 15px 40px rgba(0,0,0,0.8); transform: translateZ(0); flex-shrink:0; margin-bottom: 50px;">
     </div>`;
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
+
+// Dedicated close function to unlock the background scroll
+window.closeIosDownloadModal = function() {
+    let modal = document.getElementById('iosDownloadModal');
+    if (modal) modal.remove();
+    // Restore background scrolling
+    document.body.style.overflow = '';
+};
     
 </script>
 </body>
