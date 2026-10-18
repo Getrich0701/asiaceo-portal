@@ -5936,6 +5936,91 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, true); 
 });
+
+    function generateLockScreenPass() {
+    // 1. Get the current user's data from the page elements
+
+const nameEl = document.getElementById('cardName');
+    const titleEl = document.getElementById('cardTitle');
+    const compEl = document.getElementById('cardCompany');
+    
+    const userName = nameEl ? nameEl.innerText : "VIP Member"; 
+    
+    // Combine Title and Company (e.g., "CEO @ Acme Corp")
+    let userTitle = titleEl ? titleEl.innerText : "Executive";
+    if (compEl && compEl.innerText) {
+        userTitle += " @ " + compEl.innerText;
+    }
+        
+    // 2. Grab the existing QR code image using your exact ID
+    const qrImageElement = document.getElementById('cardQrCode');
+    
+    if (!qrImageElement || !qrImageElement.src) {
+        alert("QR Code not found. Please wait for the profile to fully load.");
+        return;
+    }
+
+    const qrImageSrc = qrImageElement.src;
+
+    // 3. Create the invisible Canvas (1080x1920 for modern smartphones)
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920; 
+    const ctx = canvas.getContext('2d');
+
+    // 4. Draw the Premium Dark Navy Background
+    ctx.fillStyle = "#051021"; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 5. Draw the Asia CEO Brand and User Details
+    ctx.textAlign = "center";
+    
+    ctx.fillStyle = "#D4AF37"; // Accent Gold
+    ctx.font = "bold 70px 'Playfair Display', serif, Arial";
+    ctx.fillText("ASIA CEO COMMUNITY", canvas.width/2, 350);
+
+    ctx.fillStyle = "#FFFFFF"; // Text Light
+    ctx.font = "bold 65px 'Inter', Arial";
+    ctx.fillText(userName, canvas.width/2, 500);
+
+    ctx.fillStyle = "#94A3B8"; // Secondary Slate
+    ctx.font = "45px 'Inter', Arial";
+    ctx.fillText(userTitle, canvas.width/2, 570);
+
+    // 6. Load and Draw the QR Code
+    const qrImg = new Image();
+    qrImg.crossOrigin = "Anonymous"; 
+    
+    qrImg.onload = function() {
+        const qrSize = 650;
+        const qrX = (canvas.width - qrSize) / 2;
+        const qrY = 750; // Positioned safely below the iPhone clock
+        
+        // White square behind the QR code for scanner contrast
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(qrX - 30, qrY - 30, qrSize + 60, qrSize + 60);
+        
+        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+        // Bottom Footer
+        ctx.fillStyle = "#D4AF37";
+        ctx.font = "bold 40px 'Inter', Arial";
+        ctx.fillText("VIP ALL-ACCESS PASS", canvas.width/2, 1600);
+
+        // 7. Trigger the Image Download instantly
+        const link = document.createElement('a');
+        let safeName = userName.replace(/[^a-z0-9]/gi, '_');
+        link.download = `AsiaCEO_VIP_Pass_${safeName}.png`;
+        link.href = canvas.toDataURL("image/png", 1.0);
+        link.click();
+    };
+    
+    qrImg.onerror = function() {
+        alert("Failed to load the QR code image into the generator. Please try again.");
+    };
+
+    qrImg.src = qrImageSrc;
+}
     
 </script>
 </body>
