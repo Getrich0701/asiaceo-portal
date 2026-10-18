@@ -6013,19 +6013,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-// iPhone Save Modal UI
+// iPhone Save Modal UI (GPU Optimized for Smooth Scrolling)
 function showIosDownloadModal(imgDataUrl) {
     let existingModal = document.getElementById('iosDownloadModal');
     if (existingModal) existingModal.remove();
 
     const modalHtml = `
-    <div id="iosDownloadModal" class="modal-overlay" style="display:flex; z-index:9999999; flex-direction:column; align-items:center; padding:20px; background:rgba(2, 8, 19, 0.95); backdrop-filter:blur(10px);">
-        <div style="width:100%; max-width:400px; display:flex; justify-content:flex-end; margin-bottom:10px;">
-            <button onclick="document.getElementById('iosDownloadModal').remove()" style="background:none; border:none; color:var(--secondary-slate); font-size:2.5em; cursor:pointer; line-height:1;">&times;</button>
+    <div id="iosDownloadModal" class="modal-overlay" style="display:flex; z-index:9999999; flex-direction:column; align-items:center; padding:40px 20px; background:rgba(5, 16, 33, 0.98); overflow-y:auto; -webkit-overflow-scrolling:touch; justify-content:flex-start;">
+        <div style="width:100%; max-width:320px; display:flex; justify-content:flex-end; margin-bottom:10px; flex-shrink:0;">
+            <button onclick="document.getElementById('iosDownloadModal').remove()" style="background:none; border:none; color:var(--text-light); font-size:2.5em; cursor:pointer; line-height:1; padding:0;">&times;</button>
         </div>
-        <h3 style="color:var(--accent-gold); margin:0 0 10px 0; border:none; padding:0;">Your VIP Pass is Ready</h3>
-        <p style="color:var(--text-light); font-size:0.95em; text-align:center; margin:0 0 25px 0; line-height:1.5;">📱 <b>Long-press</b> the image below and select <b>"Save to Photos"</b>, then set it as your Lock Screen wallpaper.</p>
-        <img src="${imgDataUrl}" style="width:100%; max-width:320px; border-radius:16px; border:2px solid var(--accent-gold); box-shadow:0 15px 40px rgba(212,175,55,0.4);">
+        <h3 style="color:var(--accent-gold); margin:0 0 10px 0; border:none; padding:0; flex-shrink:0; text-align:center;">Your VIP Pass is Ready</h3>
+        <p style="color:var(--text-light); font-size:0.95em; text-align:center; margin:0 0 25px 0; line-height:1.5; flex-shrink:0; max-width:320px;">📱 <b>Long-press</b> the image below and select <b>"Save to Photos"</b>, then set it as your Lock Screen.</p>
+        
+        <img src="${imgDataUrl}" style="width:100%; max-width:320px; border-radius:16px; border:2px solid var(--accent-gold); box-shadow:0 15px 40px rgba(0,0,0,0.8); transform: translateZ(0); flex-shrink:0; margin-bottom: 50px;">
     </div>`;
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
