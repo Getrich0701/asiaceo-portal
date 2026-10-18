@@ -5935,7 +5935,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true); 
 });
 
-    async function generateLockScreenPass(btn) {
+  async function generateLockScreenPass(btn) {
     btn.innerText = "⏳ Generating Pass...";
     btn.disabled = true;
 
@@ -5958,7 +5958,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 1. Fetch QR as a secure Blob to bypass iPhone Canvas CORS blocks
+        // Fetch QR securely to bypass CORS
         const response = await fetch(qrImageElement.src);
         const blob = await response.blob();
         const qrBase64 = await new Promise((resolve) => {
@@ -5967,31 +5967,26 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.readAsDataURL(blob);
         });
 
-        // 2. Create the Canvas
         const canvas = document.createElement('canvas');
         canvas.width = 1080;
         canvas.height = 1920; 
         const ctx = canvas.getContext('2d');
 
-        // Draw Background
+        // Draw Canvas Background & Text
         ctx.fillStyle = "#051021"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Text
         ctx.textAlign = "center";
         ctx.fillStyle = "#D4AF37"; 
         ctx.font = "bold 70px 'Playfair Display', serif, Arial";
         ctx.fillText("ASIA CEO COMMUNITY", canvas.width/2, 350);
-
         ctx.fillStyle = "#FFFFFF"; 
         ctx.font = "bold 65px 'Inter', Arial";
         ctx.fillText(userName, canvas.width/2, 500);
-
         ctx.fillStyle = "#94A3B8"; 
         ctx.font = "45px 'Inter', Arial";
         ctx.fillText(userTitle, canvas.width/2, 570);
 
-        // 3. Draw QR Image
+        // Draw QR Image
         const qrImg = new Image();
         qrImg.onload = function() {
             const qrSize = 650;
@@ -6006,11 +6001,25 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.font = "bold 40px 'Inter', Arial";
             ctx.fillText("VIP ALL-ACCESS PASS", canvas.width/2, 1600);
 
-            // 4. Extract Image Data
-          const finalImage = canvas.toDataURL("image/jpeg", 0.85);
+            const finalImage = canvas.toDataURL("image/jpeg", 0.85);
             
-            // 5. Open iPhone Native Save Modal
-            showIosDownloadModal(finalImage);
+            // 🔥 THE INLINE EXPANSION ENGINE 🔥
+            let container = document.getElementById('inlinePassContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'inlinePassContainer';
+                container.style.cssText = "width: 100%; max-width: 400px; margin: 0 auto 30px auto; text-align: center; background: rgba(5, 16, 33, 0.95); padding: 25px 20px; border-radius: 16px; border: 1px dashed var(--accent-gold); box-sizing: border-box; animation: slideDownNav 0.3s ease-out;";
+                // Injects the container directly after the button they just clicked
+                btn.parentNode.insertBefore(container, btn.nextSibling);
+            }
+            
+            container.innerHTML = `
+                <h3 style="color:var(--accent-gold); margin:0 0 10px 0; font-size:1.4em;">VIP Pass Ready</h3>
+                <p style="color:var(--text-light); font-size:0.95em; margin:0 0 20px 0; line-height:1.4;">📱 <b>Long-press</b> the image below to <b>"Save to Photos"</b>.</p>
+                <img src="${finalImage}" style="width: 100%; border-radius: 12px; border: 2px solid var(--accent-gold); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;">
+                <button onclick="document.getElementById('inlinePassContainer').style.display='none'" class="btn-outline" style="border-color: var(--secondary-slate); color: var(--text-light);">Close Pass</button>
+            `;
+            container.style.display = 'block';
 
             btn.innerText = "📥 Download VIP Lock Screen Pass";
             btn.disabled = false;
@@ -6023,44 +6032,6 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = false;
     }
 }
-
-// iPhone Save Modal UI (Auto-Scroll & Background Lock Fix)
-function showIosDownloadModal(imgDataUrl) {
-    let existingModal = document.getElementById('iosDownloadModal');
-    if (existingModal) existingModal.remove();
-
-    // 🔥 FIX 1: Instantly snap the camera to the top of the page where the modal spawns
-    window.scrollTo(0, 0);
-    document.body.scrollTop = 0; 
-    document.documentElement.scrollTop = 0;
-
-    // 🔥 FIX 2: Lock the background so the user can't accidentally swipe the page away
-    document.body.style.overflow = 'hidden';
-
-    const modalHtml = `
-    <div id="iosDownloadModal" class="modal-overlay" style="display:flex; z-index:9999999; align-items:center; justify-content:center; padding:20px; background:rgba(2, 8, 19, 0.95);">
-        <div class="modal-content" style="max-width: 360px; width: 100%; text-align: center; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;">
-            
-            <button onclick="closeIosDownloadModal()" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--secondary-slate); font-size: 2em; cursor: pointer; line-height: 1; padding: 0;">&times;</button>
-            
-            <h3 style="color:var(--accent-gold); margin:0 0 10px 0; font-size:1.4em; border:none; padding:0;">VIP Pass Ready</h3>
-            <p style="color:var(--text-light); font-size:0.9em; margin:0 0 20px 0; line-height:1.4;">📱 <b>Long-press</b> the image below to <b>"Save to Photos"</b>.</p>
-            
-            <img src="${imgDataUrl}" style="height: auto; width: auto; max-width: 100%; max-height: 55vh; border-radius: 12px; border: 2px solid var(--accent-gold); box-shadow: 0 10px 30px rgba(212,175,55,0.2); object-fit: contain;">
-        </div>
-    </div>`;
-
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-// Dedicated close function to remove the popup and unlock the screen
-window.closeIosDownloadModal = function() {
-    let modal = document.getElementById('iosDownloadModal');
-    if (modal) modal.remove();
-    
-    // 🔥 FIX 3: Restore background scrolling when the modal is closed
-    document.body.style.overflow = '';
-};
 
     
 </script>
