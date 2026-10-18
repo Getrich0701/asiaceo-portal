@@ -5958,7 +5958,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Fetch QR securely to bypass CORS
+        // Fetch QR securely
         const response = await fetch(qrImageElement.src);
         const blob = await response.blob();
         const qrBase64 = await new Promise((resolve) => {
@@ -5988,7 +5988,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Draw QR Image
         const qrImg = new Image();
-        qrImg.onload = function() {
+        qrImg.onload = async function() {
             const qrSize = 650;
             const qrX = (canvas.width - qrSize) / 2;
             const qrY = 750; 
@@ -6001,22 +6001,23 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.font = "bold 40px 'Inter', Arial";
             ctx.fillText("VIP ALL-ACCESS PASS", canvas.width/2, 1600);
 
-            const finalImage = canvas.toDataURL("image/jpeg", 0.85);
+            // 🔥 THE MEMORY FIX: Convert Canvas to a lightweight Blob URL instead of a massive text string
+            const blobUrl = await new Promise(resolve => {
+                canvas.toBlob(b => resolve(URL.createObjectURL(b)), "image/jpeg", 0.85);
+            });
             
-            // 🔥 THE INLINE EXPANSION ENGINE 🔥
             let container = document.getElementById('inlinePassContainer');
             if (!container) {
                 container = document.createElement('div');
                 container.id = 'inlinePassContainer';
                 container.style.cssText = "width: 100%; max-width: 400px; margin: 0 auto 30px auto; text-align: center; background: rgba(5, 16, 33, 0.95); padding: 25px 20px; border-radius: 16px; border: 1px dashed var(--accent-gold); box-sizing: border-box; animation: slideDownNav 0.3s ease-out;";
-                // Injects the container directly after the button they just clicked
                 btn.parentNode.insertBefore(container, btn.nextSibling);
             }
             
             container.innerHTML = `
                 <h3 style="color:var(--accent-gold); margin:0 0 10px 0; font-size:1.4em;">VIP Pass Ready</h3>
                 <p style="color:var(--text-light); font-size:0.95em; margin:0 0 20px 0; line-height:1.4;">📱 <b>Long-press</b> the image below to <b>"Save to Photos"</b>.</p>
-                <img src="${finalImage}" style="width: 100%; border-radius: 12px; border: 2px solid var(--accent-gold); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;">
+                <img src="${blobUrl}" style="width: 100%; border-radius: 12px; border: 2px solid var(--accent-gold); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;">
                 <button onclick="document.getElementById('inlinePassContainer').style.display='none'" class="btn-outline" style="border-color: var(--secondary-slate); color: var(--text-light);">Close Pass</button>
             `;
             container.style.display = 'block';
