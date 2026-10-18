@@ -2001,22 +2001,21 @@ html, body {
             <p id="cardCompany" class="vip-company"></p>
         </div>
 
-        <!-- Glassmorphic QR Module -->
-        <div class="vip-qr-module">
+      <!-- Glassmorphic QR Module -->
+        <div class="vip-qr-module" style="margin-bottom: 15px;">
             <div class="vip-qr-box">
                 <img id="cardQrCode" src="" style="width: 75px; height: 75px; display: block;">
-<!-- 🔥 PASTE THE BUTTON RIGHT HERE -->
-<button class="btn-primary" style="margin-top: 15px; width: 100%; max-width: 300px;" onclick="generateLockScreenPass()">
-   📥 Download VIP Lock Screen Pass
-</button>
-
-                
             </div>
             <div class="vip-qr-text">
                 <h4>Scan to Connect</h4>
                 <p>Add this executive directly to your secure device contacts.</p>
             </div>
         </div>
+        
+        <!-- 🔥 CORRECT BUTTON PLACEMENT (Spans the full width of the card) -->
+        <button class="btn-primary" style="width: 100%; font-size: 0.9em; padding: 12px; margin-bottom: 25px;" onclick="generateLockScreenPass()">
+           📥 Download VIP Lock Screen Pass
+        </button>
 
         <!-- Footer / Smart Chip -->
         <div class="vip-footer">
@@ -2817,19 +2816,6 @@ function triggerManualFaceID() {
         window.AndroidBridge.requestBiometrics();
     }
 }
-
-
-
-
-// 1. Run instantly the exact millisecond the script is read
-initializePortal();
-
-// 2. Run again 0.5s later as a backup
-setTimeout(initializePortal, 500);
-
-// 3. Run again 1.5s later as the ultimate failsafe
-setTimeout(initializePortal, 1500);
-
 
 // Handle Browser Back Button for SPA Routing
 window.addEventListener('popstate', function(event) {
