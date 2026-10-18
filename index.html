@@ -2842,8 +2842,7 @@ function switchTab(t, bypassHistory = false) {
     let omniDrop = document.getElementById('omniDropdown'); if(omniDrop) { omniDrop.style.display = 'none'; }
     closeAllMobileDropdowns();
     
-
-['search','history','bookmarks','profile','billing', 'postDeal', 'dealBoard', 'talentBoard', 'postJob', 'postCandidate', 'boardBoard', 'postBoardRole', 'postBoardCandidate', 'procurementBoard', 'postProcurement', 'promote', 'manageEvents', 'invite', 'guestList', 'referrals', 'messages', 'admin', 'travelBoard', 'postTravel', 'pulse', 'marketEntryBoard', 'postMarketEntry', 'leaderboard', 'tickets', 'perks', 'partners', 'postPartner', 'presidents'].forEach(x => { 
+    ['search','history','bookmarks','profile','billing', 'postDeal', 'dealBoard', 'talentBoard', 'postJob', 'postCandidate', 'boardBoard', 'postBoardRole', 'postBoardCandidate', 'procurementBoard', 'postProcurement', 'promote', 'manageEvents', 'invite', 'guestList', 'referrals', 'messages', 'admin', 'travelBoard', 'postTravel', 'pulse', 'marketEntryBoard', 'postMarketEntry', 'leaderboard', 'tickets', 'perks', 'partners', 'postPartner', 'presidents'].forEach(x => { 
         let el = document.getElementById(x+'TabContainer'); if(el) el.style.display='none'; 
     });
     
@@ -2854,8 +2853,14 @@ function switchTab(t, bypassHistory = false) {
     let targetContainer = document.getElementById(t+'TabContainer'); if(targetContainer) targetContainer.style.display = 'block'; 
     window.scrollTo(0, 0); window.scrollTo({ top: 0, behavior: 'smooth' }); 
     
+    // 🔥 BULLETPROOF FIX: Force hide the banner if we are NOT on the Pulse tab
+    let banner = document.getElementById('executiveDispatchBanner');
+    if (banner) {
+        if (t !== 'pulse') { banner.style.display = 'none'; }
+    }
+
     if(t==='profile') { loadMyProfile(); } 
-    else if(t==='pulse') { let btn = document.getElementById('tabPulse'); if(btn) btn.classList.add('active'); loadPulseFeed(); }
+    else if(t==='pulse') { let btn = document.getElementById('tabPulse'); if(btn) btn.classList.add('active'); loadPulseFeed(); loadDispatchBanner(); } 
     else if(t==='history') { if(document.getElementById('historyBadge')) document.getElementById('historyBadge').style.display = 'none'; localStorage.setItem(loggedInUser + '_historyCount', latestHistoryCount); loadFullHistory(); } 
     else if(t==='messages') { if (activeChatEmail !== "") openChat(activeChatEmail, activeChatName); else loadInbox(); } 
     else if(t==='bookmarks') { let btn = document.getElementById('tabGroupBookmarks'); if(btn) btn.classList.add('active'); loadBookmarks(); } 
@@ -5769,14 +5774,12 @@ function loadDispatchBanner() {
         if(res && res.success && res.announcement) {
             let ann = res.announcement;
             
-            // Smart UX: Check if the user already dismissed this specific announcement
             if(localStorage.getItem('dismissed_dispatch_' + ann._id)) return;
             
             let banner = document.getElementById('executiveDispatchBanner');
             if(!banner) return;
             
-            // Dynamic Theming Engine
-            let icon = "📢"; let color = "#3B82F6"; // Blue default
+            let icon = "📢"; let color = "#3B82F6"; 
             if(ann.announcementType === "Deal") { icon = "🔥"; color = "var(--accent-gold)"; }
             if(ann.announcementType === "Event") { icon = "🥂"; color = "var(--elite-purple)"; }
             if(ann.announcementType === "Alert") { icon = "🚨"; color = "#EF4444"; }
@@ -5788,7 +5791,6 @@ function loadDispatchBanner() {
                 ctaHtml = `<a href="${ann.ctaLink}" class="btn-primary" style="padding:10px 20px; font-size:0.85em; width:auto; text-decoration:none; white-space:nowrap; background:${color}; color:${ann.announcementType === 'Deal' ? '#000' : '#fff'}; border:none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-top:auto;">${ann.ctaText}</a>`;
             }
             
-            // 🔥 FIX: Added style="white-space: pre-wrap;" to the paragraph so it respects line breaks!
             banner.innerHTML = `
                 <div class="dispatch-icon">${icon}</div>
                 <div class="dispatch-content">
@@ -5798,7 +5800,14 @@ function loadDispatchBanner() {
                 ${ctaHtml}
                 <button class="dispatch-close" onclick="dismissDispatch('${ann._id}')" title="Dismiss">&times;</button>
             `;
-            banner.style.display = 'flex';
+            
+            // 🔥 BULLETPROOF FIX: Only allow visibility if the Pulse Tab is active
+            let pulseTab = document.getElementById('pulseTabContainer');
+            if (pulseTab && pulseTab.style.display === 'block') {
+                banner.style.display = 'flex';
+            } else {
+                banner.style.display = 'none';
+            }
         }
     }).getLatestAnnouncement();
 }
