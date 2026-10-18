@@ -2011,11 +2011,7 @@ html, body {
                 <p>Add this executive directly to your secure device contacts.</p>
             </div>
         </div>
-        
-        <!-- 🔥 CORRECT BUTTON PLACEMENT (Spans the full width of the card) -->
-        <button class="btn-primary" style="width: 100%; font-size: 0.9em; padding: 12px; margin-bottom: 25px;" onclick="generateLockScreenPass()">
-           📥 Download VIP Lock Screen Pass
-        </button>
+
 
         <!-- Footer / Smart Chip -->
         <div class="vip-footer">
@@ -2030,10 +2026,15 @@ html, body {
                 <rect x="13" y="6" width="6" height="12" rx="1" stroke="#D4AF37" stroke-opacity="0.4"/>
             </svg>
         </div>
-        
     </div>
 </div>
 <!-- End Digital Membership Card -->
+
+<!-- 🔥 CORRECT BUTTON PLACEMENT (Outside the card, spanning the screen) -->
+<button id="btnDownloadPass" class="btn-primary" style="width: 100%; max-width: 400px; margin: 0 auto 30px auto; display: flex; font-size: 1em; padding: 14px;" onclick="generateLockScreenPass(this)">
+   📥 Download VIP Lock Screen Pass
+</button>
+
 
 <div class="analytics-grid"><div class="analytics-card"><div class="analytics-number" id="statSearchApp">0</div><div class="analytics-label">Search Appearances</div></div><div class="analytics-card"><div class="analytics-number" id="statProfileReq">0</div><div class="analytics-label">Connection Requests</div></div><div class="analytics-card"><div class="analytics-number" style="color:var(--accent-gold);" id="statDealViews">0</div><div class="analytics-label">Deal Views</div></div><div class="analytics-card" style="border-color:#10B981; background:rgba(16, 185, 129, 0.05);"><div class="analytics-number" style="color:#10B981;" id="statVouches">0</div><div class="analytics-label">Trust Vouches</div></div></div>
 
@@ -5923,89 +5924,111 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true); 
 });
 
-    function generateLockScreenPass() {
-    // 1. Get the current user's data from the page elements
+    async function generateLockScreenPass(btn) {
+    btn.innerText = "⏳ Generating Pass...";
+    btn.disabled = true;
 
-const nameEl = document.getElementById('cardName');
-    const titleEl = document.getElementById('cardTitle');
-    const compEl = document.getElementById('cardCompany');
-    
-    const userName = nameEl ? nameEl.innerText : "VIP Member"; 
-    
-    // Combine Title and Company (e.g., "CEO @ Acme Corp")
-    let userTitle = titleEl ? titleEl.innerText : "Executive";
-    if (compEl && compEl.innerText) {
-        userTitle += " @ " + compEl.innerText;
+    try {
+        const nameEl = document.getElementById('cardName');
+        const titleEl = document.getElementById('cardTitle');
+        const compEl = document.getElementById('cardCompany');
+
+        const userName = nameEl ? nameEl.innerText : "VIP Member"; 
+        let userTitle = titleEl ? titleEl.innerText : "Executive";
+        if (compEl && compEl.innerText) {
+            userTitle += " @ " + compEl.innerText;
+        }
+        
+        const qrImageElement = document.getElementById('cardQrCode');
+        if (!qrImageElement || !qrImageElement.src) {
+            alert("QR Code not ready. Please wait a moment.");
+            btn.innerText = "📥 Download VIP Lock Screen Pass";
+            btn.disabled = false;
+            return;
+        }
+
+        // 1. Fetch QR as a secure Blob to bypass iPhone Canvas CORS blocks
+        const response = await fetch(qrImageElement.src);
+        const blob = await response.blob();
+        const qrBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+
+        // 2. Create the Canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1920; 
+        const ctx = canvas.getContext('2d');
+
+        // Draw Background
+        ctx.fillStyle = "#051021"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Text
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#D4AF37"; 
+        ctx.font = "bold 70px 'Playfair Display', serif, Arial";
+        ctx.fillText("ASIA CEO COMMUNITY", canvas.width/2, 350);
+
+        ctx.fillStyle = "#FFFFFF"; 
+        ctx.font = "bold 65px 'Inter', Arial";
+        ctx.fillText(userName, canvas.width/2, 500);
+
+        ctx.fillStyle = "#94A3B8"; 
+        ctx.font = "45px 'Inter', Arial";
+        ctx.fillText(userTitle, canvas.width/2, 570);
+
+        // 3. Draw QR Image
+        const qrImg = new Image();
+        qrImg.onload = function() {
+            const qrSize = 650;
+            const qrX = (canvas.width - qrSize) / 2;
+            const qrY = 750; 
+            
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(qrX - 30, qrY - 30, qrSize + 60, qrSize + 60);
+            ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+            ctx.fillStyle = "#D4AF37";
+            ctx.font = "bold 40px 'Inter', Arial";
+            ctx.fillText("VIP ALL-ACCESS PASS", canvas.width/2, 1600);
+
+            // 4. Extract Image Data
+            const finalImage = canvas.toDataURL("image/png", 1.0);
+            
+            // 5. Open iPhone Native Save Modal
+            showIosDownloadModal(finalImage);
+
+            btn.innerText = "📥 Download VIP Lock Screen Pass";
+            btn.disabled = false;
+        };
+        qrImg.src = qrBase64;
+
+    } catch (error) {
+        alert("Network error: Could not generate pass. Please try again.");
+        btn.innerText = "📥 Download VIP Lock Screen Pass";
+        btn.disabled = false;
     }
-        
-    // 2. Grab the existing QR code image using your exact ID
-    const qrImageElement = document.getElementById('cardQrCode');
-    
-    if (!qrImageElement || !qrImageElement.src) {
-        alert("QR Code not found. Please wait for the profile to fully load.");
-        return;
-    }
+}
 
-    const qrImageSrc = qrImageElement.src;
+// iPhone Save Modal UI
+function showIosDownloadModal(imgDataUrl) {
+    let existingModal = document.getElementById('iosDownloadModal');
+    if (existingModal) existingModal.remove();
 
-    // 3. Create the invisible Canvas (1080x1920 for modern smartphones)
-    const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 1920; 
-    const ctx = canvas.getContext('2d');
+    const modalHtml = `
+    <div id="iosDownloadModal" class="modal-overlay" style="display:flex; z-index:9999999; flex-direction:column; align-items:center; padding:20px; background:rgba(2, 8, 19, 0.95); backdrop-filter:blur(10px);">
+        <div style="width:100%; max-width:400px; display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button onclick="document.getElementById('iosDownloadModal').remove()" style="background:none; border:none; color:var(--secondary-slate); font-size:2.5em; cursor:pointer; line-height:1;">&times;</button>
+        </div>
+        <h3 style="color:var(--accent-gold); margin:0 0 10px 0; border:none; padding:0;">Your VIP Pass is Ready</h3>
+        <p style="color:var(--text-light); font-size:0.95em; text-align:center; margin:0 0 25px 0; line-height:1.5;">📱 <b>Long-press</b> the image below and select <b>"Save to Photos"</b>, then set it as your Lock Screen wallpaper.</p>
+        <img src="${imgDataUrl}" style="width:100%; max-width:320px; border-radius:16px; border:2px solid var(--accent-gold); box-shadow:0 15px 40px rgba(212,175,55,0.4);">
+    </div>`;
 
-    // 4. Draw the Premium Dark Navy Background
-    ctx.fillStyle = "#051021"; 
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 5. Draw the Asia CEO Brand and User Details
-    ctx.textAlign = "center";
-    
-    ctx.fillStyle = "#D4AF37"; // Accent Gold
-    ctx.font = "bold 70px 'Playfair Display', serif, Arial";
-    ctx.fillText("ASIA CEO COMMUNITY", canvas.width/2, 350);
-
-    ctx.fillStyle = "#FFFFFF"; // Text Light
-    ctx.font = "bold 65px 'Inter', Arial";
-    ctx.fillText(userName, canvas.width/2, 500);
-
-    ctx.fillStyle = "#94A3B8"; // Secondary Slate
-    ctx.font = "45px 'Inter', Arial";
-    ctx.fillText(userTitle, canvas.width/2, 570);
-
-    // 6. Load and Draw the QR Code
-    const qrImg = new Image();
-    qrImg.crossOrigin = "Anonymous"; 
-    
-    qrImg.onload = function() {
-        const qrSize = 650;
-        const qrX = (canvas.width - qrSize) / 2;
-        const qrY = 750; // Positioned safely below the iPhone clock
-        
-        // White square behind the QR code for scanner contrast
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(qrX - 30, qrY - 30, qrSize + 60, qrSize + 60);
-        
-        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-
-        // Bottom Footer
-        ctx.fillStyle = "#D4AF37";
-        ctx.font = "bold 40px 'Inter', Arial";
-        ctx.fillText("VIP ALL-ACCESS PASS", canvas.width/2, 1600);
-
-        // 7. Trigger the Image Download instantly
-        const link = document.createElement('a');
-        let safeName = userName.replace(/[^a-z0-9]/gi, '_');
-        link.download = `AsiaCEO_VIP_Pass_${safeName}.png`;
-        link.href = canvas.toDataURL("image/png", 1.0);
-        link.click();
-    };
-    
-    qrImg.onerror = function() {
-        alert("Failed to load the QR code image into the generator. Please try again.");
-    };
-
-    qrImg.src = qrImageSrc;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
     
 </script>
