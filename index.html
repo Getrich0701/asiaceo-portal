@@ -1037,6 +1037,9 @@ html, body {
 
 <div class="sidebar-menu" id="mobileNavGroup">
     <button id="tabPulse" class="sidebar-btn active" onclick="switchTab('pulse')">Live Pulse <span style="color:#10B981;">●</span></button>
+
+    <!-- 🔥 ADD THIS NEW BUTTON -->
+    <button id="tabRadar" class="sidebar-btn" onclick="switchTab('radar')" style="color:#10B981; font-weight: bold;">📡 Live Radar</button>
     <button id="tabSearch" class="sidebar-btn" onclick="switchTab('search')">Directory</button>
     
     <!-- THE EXCHANGE DROPDOWN -->
@@ -1126,6 +1129,8 @@ html, body {
 
       <main class="content-area">
     
+
+
     <div id="adminTabContainer" style="display:none;">
         <div class="container" style="background:linear-gradient(135deg, #1E293B, #0F172A); color:white;">
             <h2 style="color:white; border-bottom-color:var(--accent-gold);">Super Admin Dashboard</h2>
@@ -1232,10 +1237,44 @@ html, body {
     </div>
 </div>
 
+<!-- (End of the previous tab container, likely leaderboardTabContainer) -->
+    </div>
+</div>
+
+<!-- ==========================================
+     LIVE EVENT RADAR TAB
+     ========================================== -->
+<div id="radarTabContainer" style="display:none;">
+    <div class="container" style="background:linear-gradient(135deg, #020617, #0F172A); color:white; border-color:#10B981;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h2 style="color:white; border-bottom-color:#10B981; margin:0;">📡 "Who's in the Room"</h2>
+            <span class="notification-badge" style="display:inline-block; position:relative; background:#10B981; padding: 4px 10px; font-size:0.75em; letter-spacing:1px; animation:pulseText 2s infinite;">LIVE EVENT ACTIVE</span>
+        </div>
+        <p style="font-size:0.95em; color:var(--secondary-slate); line-height:1.5; margin-top:15px; margin-bottom:0;">Browse executives currently checked into the venue. Filter by industry and send instant real-time networking requests.</p>
+    </div>
+
+    <div class="container">
+        <h3 class="section-title" style="margin-top:0;">Filter Room</h3>
+        <div class="search-container" style="margin-bottom:0;">
+            <select id="radarIndustry"><option value="">All Industries</option></select>
+            <div style="display:flex; gap:10px; width:100%;">
+                <button onclick="filterRadar()" class="btn-primary" style="flex:2; background:#10B981; color:#fff; border:none;">Scan Venue</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="radarLoading" class="loader">Scanning venue...</div>
+    <div id="radarResultsArea" style="display:none; margin-bottom:40px;">
+        <h3 class="section-title" id="radarCountHeader" style="color:#10B981;">Executives Nearby (0)</h3>
+        <div id="radarCardsArea" class="card-grid"></div>
+    </div>
+</div>
+
 <div id="pulseTabContainer" style="display:none;">
     
     <!-- THE EXECUTIVE DISPATCH BANNER (Moved here!) -->
     <div id="executiveDispatchBanner" class="dispatch-banner"></div>
+
 
     <div class="container" style="background:linear-gradient(135deg, #0f172a, var(--bg-dark)); padding: 25px 35px;">
         <h2 style="border-bottom:none; margin:0; padding:0; display:flex; align-items:center; gap:10px;">
@@ -2842,25 +2881,25 @@ function switchTab(t, bypassHistory = false) {
     let omniDrop = document.getElementById('omniDropdown'); if(omniDrop) { omniDrop.style.display = 'none'; }
     closeAllMobileDropdowns();
     
-    ['search','history','bookmarks','profile','billing', 'postDeal', 'dealBoard', 'talentBoard', 'postJob', 'postCandidate', 'boardBoard', 'postBoardRole', 'postBoardCandidate', 'procurementBoard', 'postProcurement', 'promote', 'manageEvents', 'invite', 'guestList', 'referrals', 'messages', 'admin', 'travelBoard', 'postTravel', 'pulse', 'marketEntryBoard', 'postMarketEntry', 'leaderboard', 'tickets', 'perks', 'partners', 'postPartner', 'presidents'].forEach(x => { 
+    // 🔥 FIX: Added 'radar' so the tab properly hides when switching away
+    ['search','history','bookmarks','profile','billing', 'postDeal', 'dealBoard', 'talentBoard', 'postJob', 'postCandidate', 'boardBoard', 'postBoardRole', 'postBoardCandidate', 'procurementBoard', 'postProcurement', 'promote', 'manageEvents', 'invite', 'guestList', 'referrals', 'messages', 'admin', 'travelBoard', 'postTravel', 'pulse', 'radar', 'marketEntryBoard', 'postMarketEntry', 'leaderboard', 'tickets', 'perks', 'partners', 'postPartner', 'presidents'].forEach(x => { 
         let el = document.getElementById(x+'TabContainer'); if(el) el.style.display='none'; 
     });
     
-    ['tabSearch', 'tabGroupDeals', 'tabGroupTalent', 'tabGroupBoard', 'tabGroupProcure', 'tabGroupEvents', 'tabGroupBookmarks', 'tabReferrals', 'tabAdmin', 'tabGroupTravel', 'tabPulse', 'tabGroupExpansion', 'tabLeaderboard', 'tabTickets', 'tabPerks', 'tabPartners', 'tabPostPartner', 'tabPresidents'].forEach(id => { 
+    // 🔥 FIX: Added 'tabRadar' so the button properly deselects
+    ['tabSearch', 'tabGroupDeals', 'tabGroupTalent', 'tabGroupBoard', 'tabGroupProcure', 'tabGroupEvents', 'tabGroupBookmarks', 'tabReferrals', 'tabAdmin', 'tabGroupTravel', 'tabPulse', 'tabRadar', 'tabGroupExpansion', 'tabLeaderboard', 'tabTickets', 'tabPerks', 'tabPartners', 'tabPostPartner', 'tabPresidents'].forEach(id => { 
         let el = document.getElementById(id); if(el) el.classList.remove('active'); 
     });
     
     let targetContainer = document.getElementById(t+'TabContainer'); if(targetContainer) targetContainer.style.display = 'block'; 
     window.scrollTo(0, 0); window.scrollTo({ top: 0, behavior: 'smooth' }); 
     
-    // 🔥 BULLETPROOF FIX: Force hide the banner if we are NOT on the Pulse tab
     let banner = document.getElementById('executiveDispatchBanner');
-    if (banner) {
-        if (t !== 'pulse') { banner.style.display = 'none'; }
-    }
+    if (banner) { if (t !== 'pulse') { banner.style.display = 'none'; } }
 
     if(t==='profile') { loadMyProfile(); } 
     else if(t==='pulse') { let btn = document.getElementById('tabPulse'); if(btn) btn.classList.add('active'); loadPulseFeed(); loadDispatchBanner(); } 
+    else if(t==='radar') { let btn = document.getElementById('tabRadar'); if(btn) btn.classList.add('active'); loadLiveRadar(); } 
     else if(t==='history') { if(document.getElementById('historyBadge')) document.getElementById('historyBadge').style.display = 'none'; localStorage.setItem(loggedInUser + '_historyCount', latestHistoryCount); loadFullHistory(); } 
     else if(t==='messages') { if (activeChatEmail !== "") openChat(activeChatEmail, activeChatName); else loadInbox(); } 
     else if(t==='bookmarks') { let btn = document.getElementById('tabGroupBookmarks'); if(btn) btn.classList.add('active'); loadBookmarks(); } 
@@ -2890,25 +2929,10 @@ function switchTab(t, bypassHistory = false) {
         if(isUserPartner || isAdmin) document.getElementById('btnPostTicketUI').style.display = 'block';
         loadTickets(); 
     }
-    else if(t==='perks') { 
-        let btn = document.getElementById('tabPerks'); 
-        if(btn) btn.classList.add('active'); 
-        loadPerks(); 
-    }
-    else if(t==='partners') { 
-        let btn = document.getElementById('tabPartners'); 
-        if(btn) btn.classList.add('active'); 
-        loadPartnersBoard(); 
-    }
-    else if(t==='postPartner') { 
-        let btn = document.getElementById('tabPostPartner'); 
-        if(btn) btn.classList.add('active'); 
-    }
-    else if(t==='presidents') { 
-        let btn = document.getElementById('tabPresidents'); 
-        if(btn) btn.classList.add('active'); 
-        loadPresidentsBoard(); 
-    }
+    else if(t==='perks') { let btn = document.getElementById('tabPerks'); if(btn) btn.classList.add('active'); loadPerks(); }
+    else if(t==='partners') { let btn = document.getElementById('tabPartners'); if(btn) btn.classList.add('active'); loadPartnersBoard(); }
+    else if(t==='postPartner') { let btn = document.getElementById('tabPostPartner'); if(btn) btn.classList.add('active'); }
+    else if(t==='presidents') { let btn = document.getElementById('tabPresidents'); if(btn) btn.classList.add('active'); loadPresidentsBoard(); }
     else { let btn = document.getElementById('tabSearch'); if(btn && t!=='billing') btn.classList.add('active'); } 
 }
 
@@ -2958,6 +2982,107 @@ function performSearch() {
           document.getElementById('resultsCountHeader').innerText = "Search Error"; 
           document.getElementById('cardContainer').innerHTML = `<div class="empty-state" style="border-color:#EF4444; color:#EF4444;">${err ? err.message : 'Unknown Error'}</div>`; 
       }).searchData(document.getElementById('industry').value, document.getElementById('country').value, document.getElementById('company').value, document.getElementById('title').value, document.getElementById('searchCompanySize').value, Date.now());
+}
+
+
+// ==========================================
+// LIVE EVENT RADAR ENGINE
+// ==========================================
+let currentRadarData = [];
+
+function loadLiveRadar() {
+    document.getElementById('radarResultsArea').style.display = 'block';
+    document.getElementById('radarCardsArea').innerHTML = getCardSkeletonHTML(3);
+    
+    // Copy the industries over from the main search
+    const radarInd = document.getElementById('radarIndustry');
+    if (radarInd.options.length <= 1) {
+        const indOpts = document.getElementById('industry').options;
+        for (let i = 1; i < indOpts.length; i++) {
+            radarInd.appendChild(new Option(indOpts[i].value, indOpts[i].value));
+        }
+    }
+
+    // Call the backend to fetch everyone checked into today's event
+    google.script.run.withSuccessHandler(res => {
+        if (res && res.success) {
+            currentRadarData = res.attendees || [];
+            renderRadarCards(currentRadarData);
+        } else {
+            document.getElementById('radarCardsArea').innerHTML = `<div class="empty-state">No live event active today, or no attendees have scanned in yet.</div>`;
+            document.getElementById('radarCountHeader').innerText = "In the Room (0)";
+        }
+    }).getLiveEventAttendees(loggedInUser);
+}
+
+function filterRadar() {
+    const ind = document.getElementById('radarIndustry').value;
+    if (!ind) {
+        renderRadarCards(currentRadarData);
+    } else {
+        const filtered = currentRadarData.filter(a => a.industry === ind);
+        renderRadarCards(filtered);
+    }
+}
+
+function renderRadarCards(attendees) {
+    const container = document.getElementById('radarCardsArea');
+    container.innerHTML = '';
+    
+    document.getElementById('radarCountHeader').innerText = `Executives Nearby (${attendees.length})`;
+    
+    if (attendees.length === 0) {
+        container.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#718096; font-style:italic;">No attendees match this filter.</p>';
+        return;
+    }
+
+    attendees.forEach(item => {
+        const initials = item.company ? item.company.substring(0, 2).toUpperCase() : 'EX'; 
+        const avatarHtml = item.profilePic ? `<img src="${item.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : initials;
+        
+        const card = document.createElement('div');
+        card.className = 'profile-card';
+        card.style.borderColor = '#10B981'; // Green border indicating they are physically nearby
+        
+        card.innerHTML = `
+            <div style="cursor:pointer;" onclick="showProfileModal('${escape(JSON.stringify(item))}')">
+                <div class="card-header">
+                    <div class="avatar" style="border-color:#10B981; padding:0; overflow:hidden;">${avatarHtml}</div>
+                    <div class="card-title" style="width:100%;">
+                        <div class="deal-badge" style="background:rgba(16, 185, 129, 0.1); color:#10B981; border-color:#10B981; margin-bottom:5px; float:right;">🟢 IN VENUE</div>
+                        <h4 style="margin:0 0 4px 0; font-size:1.15em;">${item.company}</h4>
+                        <p style="margin:0; font-size:0.9em; font-weight:600;">${item.firstName} ${item.lastName}</p>
+                        <p style="margin:0; font-size:0.85em;">${item.title}</p>
+                    </div>
+                </div>
+                <div class="card-body" style="padding-top:10px; margin-bottom:10px;">
+                    <div class="card-tag"><strong>Industry:</strong> ${item.industry}</div>
+                    <div class="card-tag"><strong>Looking For:</strong> ${item.lookingFor || "Networking"}</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; width:100%; margin-top:auto;">
+                <button class="btn-primary" style="flex:1; background:#10B981; color:#fff; border:none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);" onclick="meetAtBar('${escape(item.email)}', '${escape(item.firstName + ' ' + item.lastName)}')">🍸 Meet at the Bar</button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function meetAtBar(emailStr, nameStr) {
+    let email = unescape(emailStr);
+    let name = unescape(nameStr);
+    
+    // Open the secure chat window with this person
+    openChat(email, name);
+    
+    // Pre-fill the input box with a customized, event-specific icebreaker
+    setTimeout(() => {
+        let input = document.getElementById('chatInput');
+        if (input) {
+            input.value = "Hi! I see we are both at the event right now. Would you be open to grabbing a quick drink at the networking area?";
+            input.focus(); // Jump cursor directly to input
+        }
+    }, 800);
 }
 
 function loadAdminAnalytics() { document.getElementById('adminLoading').style.display = 'block'; document.getElementById('adminContent').style.display = 'none'; google.script.run.withSuccessHandler(res => { document.getElementById('adminLoading').style.display = 'none'; if(res.success) { document.getElementById('statMembers').innerText = res.totalMembers; document.getElementById('statDeals').innerText = res.activeDeals; document.getElementById('statMessages').innerText = res.totalMessages; document.getElementById('statCredits').innerText = res.totalCredits; document.getElementById('statPayouts').innerText = "$" + res.pendingWithdrawals; document.getElementById('adminContent').style.display = 'block'; loadAdminApprovals(); loadAdminWarmIntros(); } else { alert("Admin Error: " + res.error); } }).getAdminAnalytics(loggedInUser); }
@@ -4763,7 +4888,7 @@ function loadSmartAlerts() {
     }).getUserSmartAlerts(loggedInUser);
 }
 
-function createNewAlert() {
+ function createNewAlert() {
     const type = document.getElementById('alertTypeNew').value;
     const keyword = document.getElementById('alertKeywordNew').value.trim();
     const loc = document.getElementById('alertLocNew').value.trim();
@@ -6034,10 +6159,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-// iPhone Save Modal UI (Pre-loader + Async Decoding)
+// iPhone Save Modal UI (Pre-loader + Async Decoding + Auto-Scroll Fix)
 function showIosDownloadModal() {
     let existingModal = document.getElementById('iosDownloadModal');
     if (existingModal) existingModal.remove();
+
+    // 🔥 FIX 1: Instantly snap the camera to the top of the page where the modal spawns
+    window.scrollTo(0, 0);
+    document.body.scrollTop = 0; 
+    document.documentElement.scrollTop = 0;
+
+    // 🔥 FIX 2: Lock the background so the user can't accidentally swipe the page away
+    document.body.style.overflow = 'hidden';
 
     const modalHtml = `
     <div id="iosDownloadModal" class="modal-overlay" style="display:flex; z-index:9999999; align-items:center; justify-content:center; padding:20px; background:rgba(2, 8, 19, 0.95);">
@@ -6053,7 +6186,7 @@ function showIosDownloadModal() {
                 
                 <div id="vipPassSpinner" style="color:var(--accent-gold); font-weight:bold; font-size:0.9em;">🎨 Rendering High-Res Pass...</div>
                 
-                <!-- 🔥 FIX 5: decoding="async" prevents the image rendering from freezing the iPhone screen -->
+                <!-- 🔥 FIX 3: decoding="async" prevents the image rendering from freezing the iPhone screen -->
                 <img id="vipPassImageFinal" decoding="async" style="opacity: 0; transition: opacity 0.4s ease-in; position:absolute; top:0; left:0; width: 100%; height: 100%; object-fit: contain; border-radius: 12px; border: 2px solid var(--accent-gold); box-shadow: 0 10px 30px rgba(212,175,55,0.2); box-sizing: border-box;">
             </div>
 
@@ -6066,8 +6199,12 @@ function showIosDownloadModal() {
 window.closeIosDownloadModal = function() {
     let modal = document.getElementById('iosDownloadModal');
     if (modal) modal.remove();
-};
     
+    // 🔥 FIX 4: Restore background scrolling when the modal is closed
+    document.body.style.overflow = '';
+};
+
 </script>
 </body>
-</html>
+</html>   
+
