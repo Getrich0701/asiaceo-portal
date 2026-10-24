@@ -1039,7 +1039,7 @@ html, body {
     <button id="tabPulse" class="sidebar-btn active" onclick="switchTab('pulse')">Live Pulse <span style="color:#10B981;">●</span></button>
 
     <!-- 🔥 ADD THIS NEW BUTTON -->
-    <button id="tabRadar" class="sidebar-btn" onclick="switchTab('radar')" style="color:#10B981; font-weight: bold;">📡 Live Radar</button>
+   <button id="tabRadar" class="sidebar-btn" onclick="switchTab('radar')">📡 Live Radar</button>
     <button id="tabSearch" class="sidebar-btn" onclick="switchTab('search')">Directory</button>
     
     <!-- THE EXCHANGE DROPDOWN -->
@@ -1248,12 +1248,14 @@ html, body {
     <div class="container" style="background:linear-gradient(135deg, #020617, #0F172A); color:white; border-color:#10B981;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <h2 style="color:white; border-bottom-color:#10B981; margin:0;">📡 "Who's in the Room"</h2>
-            <span class="notification-badge" style="display:inline-block; position:relative; background:#10B981; padding: 4px 10px; font-size:0.75em; letter-spacing:1px; animation:pulseText 2s infinite;">LIVE EVENT ACTIVE</span>
+            <!-- Dynamically controlled badge -->
+            <span id="radarStatusBadge" class="notification-badge" style="display:inline-block; position:relative; background:transparent; border: 1px solid var(--secondary-slate); color: var(--secondary-slate); padding: 4px 10px; font-size:0.75em; letter-spacing:1px;">RADAR STANDBY</span>
         </div>
         <p style="font-size:0.95em; color:var(--secondary-slate); line-height:1.5; margin-top:15px; margin-bottom:0;">Browse executives currently checked into the venue. Filter by industry and send instant real-time networking requests.</p>
     </div>
 
-    <div class="container">
+    <!-- Added ID to hide this box on non-event days -->
+    <div class="container" id="radarFilterBox" style="display:none;">
         <h3 class="section-title" style="margin-top:0;">Filter Room</h3>
         <div class="search-container" style="margin-bottom:0;">
             <select id="radarIndustry"><option value="">All Industries</option></select>
@@ -3005,12 +3007,34 @@ function loadLiveRadar() {
 
     // Call the backend to fetch everyone checked into today's event
     google.script.run.withSuccessHandler(res => {
-        if (res && res.success) {
-            currentRadarData = res.attendees || [];
+        currentRadarData = (res && res.success) ? (res.attendees || []) : [];
+        
+        const statusBadge = document.getElementById('radarStatusBadge');
+        const filterBox = document.getElementById('radarFilterBox');
+
+        if (currentRadarData.length > 0) {
+            // 🔥 STATE 1: ONLINE (Event Day)
+            statusBadge.innerHTML = 'LIVE EVENT ACTIVE';
+            statusBadge.style.cssText = 'display:inline-block; position:relative; background:#10B981; color:#fff; border:none; padding:4px 10px; font-size:0.75em; font-weight:bold; letter-spacing:1px; animation:pulseText 2s infinite; border-radius:10px;';
+            filterBox.style.display = 'block';
             renderRadarCards(currentRadarData);
         } else {
-            document.getElementById('radarCardsArea').innerHTML = `<div class="empty-state">No live event active today, or no attendees have scanned in yet.</div>`;
-            document.getElementById('radarCountHeader').innerText = "In the Room (0)";
+            // 🛑 STATE 2: OFFLINE (Normal Days)
+            statusBadge.innerHTML = 'RADAR STANDBY';
+            statusBadge.style.cssText = 'display:inline-block; position:relative; background:rgba(255,255,255,0.05); border:1px solid var(--secondary-slate); color:var(--secondary-slate); padding:4px 10px; font-size:0.75em; font-weight:bold; letter-spacing:1px; border-radius:10px;';
+            filterBox.style.display = 'none'; // Hide filters to prevent confusion
+            
+            document.getElementById('radarCountHeader').innerText = "Venue Radar is Offline";
+            document.getElementById('radarCardsArea').innerHTML = `
+                <div style="grid-column: 1/-1; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: 12px; padding: 50px 20px; text-align: center;">
+                    <div style="font-size: 3.5em; margin-bottom: 15px; filter: grayscale(100%); opacity: 0.3;">📡</div>
+                    <h3 style="color: var(--text-light); margin: 0 0 10px 0;">No Active Events Right Now</h3>
+                    <p style="color: var(--secondary-slate); font-size: 0.95em; max-width: 450px; margin: 0 auto 25px auto; line-height: 1.6;">
+                        The Live Venue Radar automatically powers on and populates during official Asia CEO Community gatherings. Grab a ticket below to join us in the room at our next event.
+                    </p>
+                    <button class="btn-primary" style="width: auto; padding: 12px 24px;" onclick="switchTab('tickets')">🎟️ View Upcoming VIP Tickets</button>
+                </div>
+            `;
         }
     }).getLiveEventAttendees(loggedInUser);
 }
