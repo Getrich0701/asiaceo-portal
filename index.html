@@ -3040,28 +3040,50 @@ function renderRadarCards(attendees) {
         const initials = item.company ? item.company.substring(0, 2).toUpperCase() : 'EX'; 
         const avatarHtml = item.profilePic ? `<img src="${item.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : initials;
         
+        const isGuest = item.isGuest || !item.hasPortalAccount;
+        const badgeText = isGuest ? "🏷️ VIP GUEST" : "🟢 IN VENUE";
+        const badgeColor = isGuest ? "var(--accent-gold)" : "#10B981";
+        const badgeBg = isGuest ? "rgba(212, 175, 55, 0.1)" : "rgba(16, 185, 129, 0.1)";
+
+        let actionButtonHtml = '';
+        if (isGuest) {
+            // Direct WhatsApp meeting trigger for non-member guests
+            const cleanPhone = (item.mobile || '').replace(/[^0-9+]/g, '');
+            const msg = encodeURIComponent(`Hi ${item.firstName}, I see we are both checked into the Asia CEO event right now! Would love to connect in the networking area.`);
+            const waLink = `https://wa.me/${cleanPhone.replace('+', '')}?text=${msg}`;
+            
+            actionButtonHtml = `
+                <a href="${waLink}" target="_blank" class="btn-primary" style="flex:1; background:var(--accent-gold); color:#000; border:none; text-decoration:none; text-align:center; font-weight:600; padding:12px;">🍸 Connect via WhatsApp</a>
+            `;
+        } else {
+            // Standard Portal Secure Chat for registered members
+            actionButtonHtml = `
+                <button class="btn-primary" style="flex:1; background:#10B981; color:#fff; border:none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);" onclick="meetAtBar('${escape(item.email)}', '${escape(item.firstName + ' ' + item.lastName)}')">🍸 Meet at the Bar</button>
+            `;
+        }
+
         const card = document.createElement('div');
         card.className = 'profile-card';
-        card.style.borderColor = '#10B981'; // Green border indicating they are physically nearby
+        card.style.borderColor = badgeColor;
         
         card.innerHTML = `
             <div style="cursor:pointer;" onclick="showProfileModal('${escape(JSON.stringify(item))}')">
                 <div class="card-header">
-                    <div class="avatar" style="border-color:#10B981; padding:0; overflow:hidden;">${avatarHtml}</div>
+                    <div class="avatar" style="border-color:${badgeColor}; padding:0; overflow:hidden;">${avatarHtml}</div>
                     <div class="card-title" style="width:100%;">
-                        <div class="deal-badge" style="background:rgba(16, 185, 129, 0.1); color:#10B981; border-color:#10B981; margin-bottom:5px; float:right;">🟢 IN VENUE</div>
-                        <h4 style="margin:0 0 4px 0; font-size:1.15em;">${item.company}</h4>
+                        <div class="deal-badge" style="background:${badgeBg}; color:${badgeColor}; border-color:${badgeColor}; margin-bottom:5px; float:right;">${badgeText}</div>
+                        <h4 style="margin:0 0 4px 0; font-size:1.15em;">${item.company || 'Private Firm'}</h4>
                         <p style="margin:0; font-size:0.9em; font-weight:600;">${item.firstName} ${item.lastName}</p>
-                        <p style="margin:0; font-size:0.85em;">${item.title}</p>
+                        <p style="margin:0; font-size:0.85em;">${item.title || 'Executive'}</p>
                     </div>
                 </div>
                 <div class="card-body" style="padding-top:10px; margin-bottom:10px;">
-                    <div class="card-tag"><strong>Industry:</strong> ${item.industry}</div>
-                    <div class="card-tag"><strong>Looking For:</strong> ${item.lookingFor || "Networking"}</div>
+                    <div class="card-tag"><strong>Industry:</strong> ${item.industry || 'Business Services'}</div>
+                    <div class="card-tag"><strong>Looking For:</strong> ${item.lookingFor || 'Networking'}</div>
                 </div>
             </div>
             <div style="display:flex; gap:10px; width:100%; margin-top:auto;">
-                <button class="btn-primary" style="flex:1; background:#10B981; color:#fff; border:none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);" onclick="meetAtBar('${escape(item.email)}', '${escape(item.firstName + ' ' + item.lastName)}')">🍸 Meet at the Bar</button>
+                ${actionButtonHtml}
             </div>
         `;
         container.appendChild(card);
