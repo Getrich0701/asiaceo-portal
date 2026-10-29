@@ -1285,10 +1285,18 @@ html, body {
         <p style="color:var(--secondary-slate); font-size:0.9em; margin-top:5px;">Real-time market intel, quick asks, and movements from the Asia CEO network.</p>
     </div>
     
-    <div class="pulse-container">
-        <div class="pulse-input-area">
-            <textarea id="pulseInputText" class="pulse-textarea" placeholder="Share a quick insight, ask the network a question, or post a travel update (Max 280 chars)..." maxlength="280"></textarea>
-            <button class="pulse-btn" id="btnSubmitPulse" onclick="submitPulse()">Post</button>
+  <div class="pulse-container">
+        <!-- 🔥 UPDATED: Pulse Input Area with Bounty Selector 🔥 -->
+        <div class="pulse-input-area" style="flex-direction:column; gap:10px;">
+            <textarea id="pulseInputText" class="pulse-textarea" placeholder="Share an insight, ask a question, or post a bounty (Max 280 chars)..." maxlength="280"></textarea>
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center; flex-wrap:wrap; gap:10px;">
+                <select id="pulseBountySelect" style="width:auto; padding:10px 15px; font-size:0.85em; border-radius:20px; background:rgba(212,175,55,0.05); color:var(--accent-gold); border:1px dashed var(--accent-gold); font-weight:bold; cursor:pointer; min-width: 200px;">
+                    <option value="0">Standard Post (Free)</option>
+                    <option value="1">🚨 1-Credit Bounty</option>
+                    <option value="3">🚨 3-Credit Bounty (Urgent)</option>
+                </select>
+                <button class="pulse-btn" id="btnSubmitPulse" onclick="submitPulse()" style="min-width:120px;">Post</button>
+            </div>
         </div>
         <div id="pulseLoading" class="loader" style="margin-top:0;">Syncing feed...</div>
         <div id="pulseFeedArea" class="pulse-feed"></div>
@@ -4769,6 +4777,7 @@ function requestMeetup(id, ownerEmail, destination, btn) {
 
 function submitTravelForm() { const err = document.getElementById('travelError'); err.style.display = 'none'; const msg = document.getElementById('travelMsg'); msg.style.display = 'none'; const data = { destination: document.getElementById('travDest').value.trim(), arrivalDate: document.getElementById('travArrDate').value, departureDate: document.getElementById('travDepDate').value, availability: document.getElementById('travAvail').value, description: document.getElementById('travDesc').value.trim() }; if(!data.destination || !data.arrivalDate || !data.departureDate || !data.description) { err.innerText = "Please fill in all required fields."; err.style.display = 'block'; return; } if (new Date(data.arrivalDate) > new Date(data.departureDate)) { err.innerText = "Departure date cannot be before arrival date."; err.style.display = 'block'; return; } document.getElementById('btnSubmitTravel').disabled = true; document.getElementById('postTravLoading').style.display = 'block'; google.script.run.withSuccessHandler(res => { document.getElementById('btnSubmitTravel').disabled = false; document.getElementById('postTravLoading').style.display = 'none'; if(res.success) { msg.innerText = "Travel plan posted successfully! Other members can now request meetups with you."; msg.style.display = 'block'; ['travDest', 'travArrDate', 'travDepDate', 'travDesc'].forEach(id => document.getElementById(id).value = ''); } else { err.innerText = res.error || "Failed to post travel plan."; err.style.display = 'block'; } }).withFailureHandler(error => { document.getElementById('btnSubmitTravel').disabled = false; document.getElementById('postTravLoading').style.display = 'none'; err.innerText = "Backend Error: " + error.message; err.style.display = 'block'; }).submitTravelPlan(data, loggedInUser); }
 
+// 3. Updated Feed Rendering Engine
 function loadPulseFeed() { 
     document.getElementById('pulseLoading').style.display = 'block'; 
     const feedArea = document.getElementById('pulseFeedArea'); 
@@ -4787,10 +4796,31 @@ function loadPulseFeed() {
             card.className = 'pulse-card'; 
             
             let actionHtml = ''; 
+            let actionText = '💬 Message';
+            
+            let bountyHtml = '';
+            
+            // Generate glowing red border and countdown if bounty is active
+            if (u.isBounty && u.bountyStatus === 'Active' && u.bountyExpiry) {
+                let expiryTime = new Date(u.bountyExpiry).getTime();
+                if (expiryTime - new Date().getTime() > 0) {
+                    card.style.borderColor = '#EF4444';
+                    card.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.15)';
+                    actionText = `🤝 Claim ${u.bountyAmount} Credits`;
+                    
+                    bountyHtml = `
+                        <div class="bounty-box" style="background: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+                            <span class="bounty-label" style="color:#EF4444; font-weight:bold; font-size:0.85em; letter-spacing:1px;">🚨 ${u.bountyAmount} CREDIT BOUNTY</span>
+                            <span class="bounty-timer" data-expiry="${u.bountyExpiry}" style="color:#FCA5A5; font-family:monospace; font-weight:bold; font-size:0.9em;">Calculating...</span>
+                        </div>
+                    `;
+                }
+            }
+
             if ((u.email || "").toLowerCase() !== loggedInUser.toLowerCase()) { 
                 let safeName = escape(u.name || 'Executive'); 
                 let safeEmail = escape(u.email); 
-                actionHtml = `<div class="pulse-action"><button class="pulse-action-btn" onclick="openChat('${safeEmail}', '${safeName}')">💬 Message</button></div>`; 
+                actionHtml = `<div class="pulse-action"><button class="pulse-action-btn" ${u.isBounty ? 'style="border-color:#EF4444; color:#EF4444; font-weight:bold;"' : ''} onclick="openChat('${safeEmail}', '${safeName}')">${actionText}</button></div>`; 
             } 
 
             let displayTime = "Recently";
@@ -4803,12 +4833,11 @@ function loadPulseFeed() {
                 }
             }
 
-            // 🔥 SMART AVATAR SWAP 🔥
             const avatarHtml = u.profilePic 
                 ? `<img src="${u.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` 
                 : u.initials;
                 
-            card.innerHTML = `<div class="pulse-avatar" style="padding:0; overflow:hidden;">${avatarHtml}</div><div class="pulse-content"><div class="pulse-header"><div><p class="pulse-name">${u.name}</p><p class="pulse-title">${u.title} at ${u.company}</p></div><div class="pulse-time">${displayTime}</div></div><p class="pulse-text">${escapeHTML(u.text)}</p>${actionHtml}</div>`;
+            card.innerHTML = `<div class="pulse-avatar" style="padding:0; overflow:hidden;">${avatarHtml}</div><div class="pulse-content"><div class="pulse-header"><div><p class="pulse-name">${u.name}</p><p class="pulse-title">${u.title} at ${u.company}</p></div><div class="pulse-time">${displayTime}</div></div>${bountyHtml}<p class="pulse-text">${escapeHTML(u.text)}</p>${actionHtml}</div>`;
             
             feedArea.appendChild(card); 
         });
@@ -4819,8 +4848,60 @@ function loadPulseFeed() {
 }
 
 
-function submitPulse() { const textObj = document.getElementById('pulseInputText'); const text = textObj.value.trim(); if(!text) return; if(text.length > 280) { alert("Please keep your update under 280 characters."); return; } const btn = document.getElementById('btnSubmitPulse'); btn.innerText = "..."; btn.disabled = true; google.script.run.withSuccessHandler(res => { btn.innerText = "Post"; btn.disabled = false; if(res.success) { textObj.value = ''; loadPulseFeed(); } else { alert(res.error || "Failed to post."); } }).withFailureHandler(err => { btn.innerText = "Post"; btn.disabled = false; alert("Backend Error: " + err.message); }).postPulseUpdate(text, loggedInUser); }
+// 1. Updated Submission Handler
+function submitPulse() { 
+    const textObj = document.getElementById('pulseInputText'); 
+    const text = textObj.value.trim(); 
+    const bountyVal = document.getElementById('pulseBountySelect').value;
+    
+    if(!text) return; 
+    if(text.length > 280) { alert("Please keep your update under 280 characters."); return; } 
+    
+    const btn = document.getElementById('btnSubmitPulse'); 
+    btn.innerText = "Processing..."; btn.disabled = true; 
+    
+    const data = { text: text, bounty: parseInt(bountyVal) || 0 };
 
+    google.script.run.withSuccessHandler(res => { 
+        btn.innerText = "Post"; btn.disabled = false; 
+        if(res.success) { 
+            textObj.value = ''; 
+            document.getElementById('pulseBountySelect').value = "0";
+            if(res.newCredits !== undefined) document.getElementById('creditBalance').innerText = res.newCredits;
+            loadPulseFeed(); 
+        } else { 
+            alert(res.error || "Failed to post."); 
+        } 
+    }).withFailureHandler(err => { 
+        btn.innerText = "Post"; btn.disabled = false; 
+        alert("Backend Error: " + err.message); 
+    }).postPulseUpdate(data, loggedInUser); 
+}
+
+// 2. Global Timer for active bounties
+setInterval(() => {
+    document.querySelectorAll('.bounty-timer').forEach(el => {
+        let expiry = new Date(el.getAttribute('data-expiry')).getTime();
+        let now = new Date().getTime();
+        let distance = expiry - now;
+        
+        if (distance < 0) {
+            el.innerText = "EXPIRED";
+            el.style.color = "var(--secondary-slate)";
+            let box = el.closest('.bounty-box');
+            if (box) {
+                box.style.borderColor = "var(--border-color)";
+                box.style.background = "rgba(255,255,255,0.05)";
+                box.querySelector('.bounty-label').style.color = "var(--secondary-slate)";
+            }
+        } else {
+            let h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            let s = Math.floor((distance % (1000 * 60)) / 1000);
+            el.innerText = `⏳ ${h}h ${m}m ${s}s`;
+        }
+    });
+}, 1000);
 
 function requestWarmIntroAction(btn, itemDataStr) { 
     const item = JSON.parse(unescape(itemDataStr));
