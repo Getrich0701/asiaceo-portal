@@ -2779,6 +2779,14 @@ let portalInitialized = false; // 🔥 THIS STOPS THE LOGIN LOOP CRASH
 let biometricRequested = false;
 
 function initializePortal() {
+    // 🔥 NEW: O2O Verification Interceptor
+    let urlParams = new URLSearchParams(window.location.search);
+    let verifyId = urlParams.get('verifyID');
+    if (verifyId) {
+        triggerPartnerVerification(verifyId);
+        return; // Stops the rest of the portal from loading!
+    }
+    
     // 🔥 If it already ran, stop it from running again!
     if (portalInitialized) return; 
     portalInitialized = true;
@@ -4170,11 +4178,12 @@ function renderProfile(data) {
             document.getElementById('cardInitials').style.display = 'flex';
         }
 
-// 3. Generate the Networking vCard QR Code
-// This creates a downloadable contact card so when someone scans it, the CEO is instantly added to their phone contacts.
-let vCardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${data.firstName} ${data.lastName}\nORG:${data.company}\nTITLE:${data.title}\nEMAIL:${loggedInUser}\nEND:VCARD`;
-let encodedVCard = encodeURIComponent(vCardData);
-document.getElementById('cardQrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedVCard}`;
+// 3. Generate the O2O Partner Verification QR Code
+        // This creates a secure URL. When a partner scans it, it opens a hidden verification screen.
+        let verifyUrl = `https://www.asiaceo.club/weeklyconnection?verifyID=${data.memberId || data._id}`;
+        let encodedUrl = encodeURIComponent(verifyUrl);
+        document.getElementById('cardQrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedUrl}`;
+    
         let previewEl = document.getElementById('profPicPreview');
         if (previewEl) {
             if (data.profilePic) {
@@ -6347,6 +6356,60 @@ window.closeIosDownloadModal = function() {
     document.body.style.overflow = '';
 };
 
+// ==========================================
+// O2O PARTNER REDEMPTION ENGINE
+// ==========================================
+function triggerPartnerVerification(verifyId) {
+    // 1. Hide the entire normal portal
+    document.getElementById('globalSplashScreen').style.display = 'none';
+    if(document.getElementById('authContainer')) document.getElementById('authContainer').style.display = 'none';
+    if(document.getElementById('dashboardView')) document.getElementById('dashboardView').style.display = 'none';
+
+    // 2. Create the Full-Screen Verification UI
+    let vUI = document.createElement('div');
+    vUI.id = 'partnerVerificationScreen';
+    vUI.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--bg-dark); z-index:9999999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; font-family:'Inter', sans-serif; transition: background 0.5s ease;";
+    vUI.innerHTML = `<div class="loader" style="display:block; font-size:1.2em;">Authenticating Member...</div>`;
+    document.body.appendChild(vUI);
+
+    // 3. Call Backend to Verify
+    google.script.run.withSuccessHandler(res => {
+        if (res.success && res.isValid) {
+            // GREEN LIGHT - ACTIVE VIP
+            let pic = res.profilePic ? `<img src="${res.profilePic}" style="width:120px; height:120px; border-radius:50%; border:4px solid #10B981; object-fit:cover; margin-bottom:20px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">` : `<div style="font-size:5em; margin-bottom:20px;">👤</div>`;
+            
+            vUI.style.background = "#064E3B"; // Deep elite green
+            vUI.innerHTML = `
+                <div style="background:#fff; border-radius:24px; padding:40px 20px; width:100%; max-width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.6); animation: slideDownNav 0.4s ease-out; box-sizing: border-box;">
+                    ${pic}
+                    <div style="color:#10B981; font-size:4em; line-height:1; margin-bottom:10px; filter:drop-shadow(0 4px 10px rgba(16,185,129,0.3));">✅</div>
+                    <h1 style="color:#064E3B; margin:0 0 5px 0; font-family:'Playfair Display', serif; font-size:2.2em;">${res.name}</h1>
+                    <p style="color:#475569; margin:0 0 5px 0; font-weight:600; font-size:1.15em;">${res.title}</p>
+                    <p style="color:#94A3B8; margin:0 0 20px 0; font-size:1em;">${res.company}</p>
+                    
+                    <div style="display:inline-block; background:rgba(16,185,129,0.1); color:#10B981; padding:10px 20px; border-radius:30px; font-weight:bold; letter-spacing:1px; border:2px solid #10B981; font-size: 0.85em;">
+                        ${res.message} • ${res.tier}
+                    </div>
+                    <p style="color:#94A3B8; font-size:0.75em; margin-top:35px; text-transform:uppercase; letter-spacing:1px;">Asia CEO Community<br>Official Partner Gateway</p>
+                </div>
+            `;
+        } else {
+            // RED LIGHT - EXPIRED OR INVALID
+            vUI.style.background = "#7F1D1D"; // Deep red
+            vUI.innerHTML = `
+                <div style="background:#fff; border-radius:24px; padding:40px 20px; width:100%; max-width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.6); animation: slideDownNav 0.4s ease-out; box-sizing: border-box;">
+                    <div style="color:#EF4444; font-size:5em; line-height:1; margin-bottom:20px;">❌</div>
+                    <h2 style="color:#7F1D1D; margin:0 0 10px 0; font-family:'Playfair Display', serif; font-size:2em;">Access Denied</h2>
+                    <p style="color:#475569; font-weight:600; font-size:1.1em; padding: 0 20px;">${res.error || res.message || "Invalid or Expired Membership"}</p>
+                    <p style="color:#94A3B8; font-size:0.75em; margin-top:40px; text-transform:uppercase; letter-spacing:1px;">Asia CEO Community</p>
+                </div>
+            `;
+        }
+    }).withFailureHandler(err => {
+        vUI.innerHTML = `<div style="color:#EF4444; background:#fff; padding:20px; border-radius:12px; font-weight:bold;">System Error: ${err.message}</div>`;
+    }).verifyMemberStatus(verifyId);
+}
+    
 </script>
 </body>
 </html>   
