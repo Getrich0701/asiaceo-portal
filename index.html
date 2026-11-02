@@ -5869,10 +5869,10 @@ function loadTickets() {
     google.script.run.withSuccessHandler(res => {
         if (loader) loader.style.display = 'none';
         
-        if(res && res.success && res.tickets && res.tickets.length > 0) {
-            let html = '';
-            res.tickets.forEach(t => {
-                try {
+        if (res && res.success) {
+            if (res.tickets && res.tickets.length > 0) {
+                let html = '';
+                res.tickets.forEach(t => {
                     let codeToShow = t.discountCode || 'VIP-ACCESS-GRANTED';
                     let btnHtml = t.hasClaimed 
                         ? `<div class="tkt-code-reveal"><span class="tkt-code-label">✅ Access Secured</span><div class="tkt-code-text" style="user-select:all;">${codeToShow}</div></div>` 
@@ -5881,10 +5881,10 @@ function loadTickets() {
                     html += `
                     <div class="ticket-card">
                         <div class="ticket-info">
-                            <span class="tkt-sponsor">Hosted by ${t.sponsor || 'Platform Partner'}</span>
-                            <h3 class="tkt-title">${t.title || 'Exclusive Event'}</h3>
-                            <div class="tkt-date">📅 ${t.date || 'TBA'}</div>
-                            <p class="tkt-desc">${t.desc || 'No description provided.'}</p>
+                            <span class="tkt-sponsor">Hosted by ${t.sponsor}</span>
+                            <h3 class="tkt-title">${t.title}</h3>
+                            <div class="tkt-date">📅 ${t.date}</div>
+                            <p class="tkt-desc">${t.desc}</p>
                         </div>
                         <div class="ticket-action">
                             <div class="inventory-ring ${t.available < 5 ? 'low-stock' : ''}">
@@ -5896,21 +5896,20 @@ function loadTickets() {
                             </div>
                         </div>
                     </div>`;
-                } catch(e) {
-                    console.error("Failed to render a ticket card:", e);
-                }
-            });
-            if (area) area.innerHTML = html;
+                });
+                if (area) area.innerHTML = html;
+            } else {
+                if (area) area.innerHTML = `<div class="empty-state">No VIP tickets are currently available. Check back soon!</div>`;
+            }
         } else {
-            if (area) area.innerHTML = `<div class="empty-state">${(res && res.error) ? res.error : "No VIP tickets are currently available. Check back soon!"}</div>`;
+            if (area) area.innerHTML = `<div class="error-msg" style="display:block;">${res ? res.error : 'Failed to load tickets.'}</div>`;
         }
     }).withFailureHandler(err => {
-        // Instantly catches backend crashes and stops the infinite loading
         if (loader) loader.style.display = 'none';
-        if (area) area.innerHTML = `<div class="error-msg" style="display:block;">System Error: ${err.message}. Please check backend logs.</div>`;
+        if (area) area.innerHTML = `<div class="error-msg" style="display:block;">System Error: ${err.message}</div>`;
     }).getActiveTickets(loggedInUser);
 }
-
+    
 function executeTicketClaim(eventId, btn) {
     iosSafeConfirm("Claim Ticket", "🎟️", "This will permanently claim 1 ticket from the inventory and reveal the private discount code. Proceed?", function() {
         btn.innerText = "Claiming..."; btn.disabled = true;
