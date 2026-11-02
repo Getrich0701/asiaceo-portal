@@ -5863,47 +5863,54 @@ function triggerGalaFromExcel() {
 // VIP TICKET HUB CONTROLLERS
 // ==========================================
 function loadTickets() {
-    document.getElementById('ticketsLoading').style.display = 'block';
-    document.getElementById('ticketsArea').innerHTML = '';
+    let loader = document.getElementById('ticketsLoading');
+    let area = document.getElementById('ticketsArea');
+    
+    if (loader) loader.style.display = 'block';
+    if (area) area.innerHTML = '';
     
     google.script.run.withSuccessHandler(res => {
-        document.getElementById('ticketsLoading').style.display = 'none';
+        if (loader) loader.style.display = 'none';
         
-        if(res.success && res.tickets && res.tickets.length > 0) {
+        if(res && res.success && res.tickets && res.tickets.length > 0) {
             let html = '';
             res.tickets.forEach(t => {
-                let codeToShow = t.discountCode || 'VIP-ACCESS-GRANTED';
-                let btnHtml = t.hasClaimed 
-                    ? `<div class="tkt-code-reveal"><span class="tkt-code-label">✅ Access Secured</span><div class="tkt-code-text" style="user-select:all;">${codeToShow}</div></div>` 
-                    : `<button class="btn-primary" style="width:100%;" onclick="executeTicketClaim('${t.id}', this)">🎟️ Claim Ticket</button>`;
-                
-                html += `
-                <div class="ticket-card">
-                    <div class="ticket-info">
-                        <span class="tkt-sponsor">Hosted by ${t.sponsor}</span>
-                        <h3 class="tkt-title">${t.title}</h3>
-                        <div class="tkt-date">📅 ${t.date}</div>
-                        <p class="tkt-desc">${t.desc}</p>
-                    </div>
-                    <div class="ticket-action">
-                        <div class="inventory-ring ${t.available < 5 ? 'low-stock' : ''}">
-                            <span class="inv-num ${t.available < 5 ? 'low-stock-text' : ''}">${t.available}</span>
-                            <span class="inv-label">Left</span>
+                try {
+                    let codeToShow = t.discountCode || 'VIP-ACCESS-GRANTED';
+                    let btnHtml = t.hasClaimed 
+                        ? `<div class="tkt-code-reveal"><span class="tkt-code-label">✅ Access Secured</span><div class="tkt-code-text" style="user-select:all;">${codeToShow}</div></div>` 
+                        : `<button class="btn-primary" style="width:100%;" onclick="executeTicketClaim('${t.id}', this)">🎟️ Claim Ticket</button>`;
+                    
+                    html += `
+                    <div class="ticket-card">
+                        <div class="ticket-info">
+                            <span class="tkt-sponsor">Hosted by ${t.sponsor || 'Platform Partner'}</span>
+                            <h3 class="tkt-title">${t.title || 'Exclusive Event'}</h3>
+                            <div class="tkt-date">📅 ${t.date || 'TBA'}</div>
+                            <p class="tkt-desc">${t.desc || 'No description provided.'}</p>
                         </div>
-                        <div id="tktActionBox_${t.id}" style="width:100%;">
-                            ${btnHtml}
+                        <div class="ticket-action">
+                            <div class="inventory-ring ${t.available < 5 ? 'low-stock' : ''}">
+                                <span class="inv-num ${t.available < 5 ? 'low-stock-text' : ''}">${t.available}</span>
+                                <span class="inv-label">Left</span>
+                            </div>
+                            <div id="tktActionBox_${t.id}" style="width:100%;">
+                                ${btnHtml}
+                            </div>
                         </div>
-                    </div>
-                </div>`;
+                    </div>`;
+                } catch(e) {
+                    console.error("Failed to render a ticket card:", e);
+                }
             });
-            document.getElementById('ticketsArea').innerHTML = html;
+            if (area) area.innerHTML = html;
         } else {
-            document.getElementById('ticketsArea').innerHTML = `<div class="empty-state">${res.error || "No VIP tickets are currently available. Check back soon!"}</div>`;
+            if (area) area.innerHTML = `<div class="empty-state">${(res && res.error) ? res.error : "No VIP tickets are currently available. Check back soon!"}</div>`;
         }
     }).withFailureHandler(err => {
-        // 🔥 This instantly catches backend crashes and stops the infinite loading
-        document.getElementById('ticketsLoading').style.display = 'none';
-        document.getElementById('ticketsArea').innerHTML = `<div class="error-msg" style="display:block;">System Error: ${err.message}. Please check backend logs.</div>`;
+        // Instantly catches backend crashes and stops the infinite loading
+        if (loader) loader.style.display = 'none';
+        if (area) area.innerHTML = `<div class="error-msg" style="display:block;">System Error: ${err.message}. Please check backend logs.</div>`;
     }).getActiveTickets(loggedInUser);
 }
 
