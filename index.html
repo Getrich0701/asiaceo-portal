@@ -5868,6 +5868,7 @@ function loadTickets() {
     
     google.script.run.withSuccessHandler(res => {
         document.getElementById('ticketsLoading').style.display = 'none';
+        
         if(res.success && res.tickets && res.tickets.length > 0) {
             let html = '';
             res.tickets.forEach(t => {
@@ -5897,8 +5898,12 @@ function loadTickets() {
             });
             document.getElementById('ticketsArea').innerHTML = html;
         } else {
-            document.getElementById('ticketsArea').innerHTML = '<div class="empty-state">No VIP tickets are currently available. Check back soon!</div>';
+            document.getElementById('ticketsArea').innerHTML = `<div class="empty-state">${res.error || "No VIP tickets are currently available. Check back soon!"}</div>`;
         }
+    }).withFailureHandler(err => {
+        // 🔥 This instantly catches backend crashes and stops the infinite loading
+        document.getElementById('ticketsLoading').style.display = 'none';
+        document.getElementById('ticketsArea').innerHTML = `<div class="error-msg" style="display:block;">System Error: ${err.message}. Please check backend logs.</div>`;
     }).getActiveTickets(loggedInUser);
 }
 
