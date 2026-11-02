@@ -5907,6 +5907,7 @@ function loadTickets() {
     }).withFailureHandler(err => {
         if (loader) loader.style.display = 'none';
         if (area) area.innerHTML = `<div class="error-msg" style="display:block;">System Bridge Error: ${err.message}</div>`;
+        alert("Bridge Error: " + err.message);
     }).getActiveTickets(loggedInUser);
 }
     
