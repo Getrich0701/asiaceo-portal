@@ -2704,7 +2704,12 @@ window.addEventListener('message', function(event) {
     if(event.data && event.data.action === 'loadUrlParams') { 
         if (event.data.ref) { try { trackedReferrerEmail = atob(event.data.ref); } catch(e) {} } 
         if (event.data.vdrTrack) { vdrTrackingId = event.data.vdrTrack; } 
-    } 
+        
+        // 🔥 NEW: Catch the O2O Partner Verification ID from the Wix Parent Window
+        if (event.data.verifyID) {
+            triggerPartnerVerification(event.data.verifyID);
+        }
+    }
     
     // 2. 🔥 THE NATIVE BRIDGE: Listen for FaceID / Biometric success from the Phone
     if(event.data && event.data.action === 'biometricSuccess') {
