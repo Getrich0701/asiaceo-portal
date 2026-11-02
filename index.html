@@ -5905,7 +5905,6 @@ function loadTickets() {
             if (area) area.innerHTML = `<div class="error-msg" style="display:block;">${res ? res.error : 'Failed to load tickets.'}</div>`;
         }
     }).withFailureHandler(err => {
-        // 🔥 THIS CATCHES THE SILENT CRASH AND STOPS THE INFINITE LOADER
         if (loader) loader.style.display = 'none';
         if (area) area.innerHTML = `<div class="error-msg" style="display:block;">System Bridge Error: ${err.message}</div>`;
     }).getActiveTickets(loggedInUser);
