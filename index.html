@@ -2929,11 +2929,18 @@ function switchTab(t, bypassHistory = false) {
     else if(t==='travelBoard') { let btn = document.getElementById('tabGroupTravel'); if(btn) btn.classList.add('active'); loadTravelBoardData(); }
     else if(['postTravel'].includes(t)) { let btn = document.getElementById('tabGroupTravel'); if(btn) btn.classList.add('active'); }
     else if(['postMarketEntry'].includes(t)) { let btn = document.getElementById('tabGroupExpansion'); if(btn) btn.classList.add('active'); }
-    else if(t==='leaderboard') { let btn = document.getElementById('tabLeaderboard'); if(btn) btn.classList.add('active'); loadLeaderboard(); }
+else if(t==='leaderboard') { let btn = document.getElementById('tabLeaderboard'); if(btn) btn.classList.add('active'); loadLeaderboard(); }
     else if(t==='tickets') { 
         let btn = document.getElementById('tabTickets'); 
         if(btn) btn.classList.add('active'); 
-        if(isUserPartner || isAdmin) document.getElementById('btnPostTicketUI').style.display = 'block';
+        
+        // 🔥 CRITICAL FIX: Safely checks admin status without throwing a fatal ReferenceError
+        let isAdminUser = (document.getElementById('tabAdmin') && document.getElementById('tabAdmin').style.display === 'flex');
+        let postBtn = document.getElementById('btnPostTicketUI');
+        if (postBtn && (isUserPartner || isAdminUser)) {
+            postBtn.style.display = 'block';
+        }
+        
         loadTickets(); 
     }
     else if(t==='perks') { let btn = document.getElementById('tabPerks'); if(btn) btn.classList.add('active'); loadPerks(); }
