@@ -12,6 +12,59 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
+/* Base Luxury card animations */
+@keyframes metallicShine {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Card wrappers - Upgrades */
+.card-tier-ambassador {
+    background: linear-gradient(135deg, #0d1e36 0%, #061121 50%, #0d1e36 100%) !important;
+    border: 2px solid #D4AF37 !important;
+    box-shadow: 0 15px 35px rgba(212, 175, 55, 0.25) !important;
+}
+
+.card-tier-corporate {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%) !important;
+    border: 2px solid #cbd5e1 !important; /* Silver Platinum */
+    box-shadow: 0 15px 35px rgba(148, 163, 184, 0.2) !important;
+}
+
+/* Obsidian Black Card - 500+ Rainmaker Points */
+.card-tier-black {
+    background: linear-gradient(135deg, #050505 0%, #141414 40%, #050505 60%, #1f1f1f 100%) !important;
+    border: 2px solid transparent !important;
+    background-clip: padding-box, border-box !important;
+    background-image: linear-gradient(#050505, #050505), 
+                      linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%) !important; /* Iridescent Obsidian edge */
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 
+                0 0 20px rgba(233, 64, 87, 0.25) !important;
+    position: relative;
+}
+
+.card-tier-black::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 20px;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: metallicShine 4s infinite linear;
+    pointer-events: none;
+}
+
+.card-tier-partner {
+    background: linear-gradient(135deg, #1c1917 0%, #0c0a09 50%, #1c1917 100%) !important;
+    border: 2px solid #a8a29e !important; /* Bronze/Slate */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Shimmer/Metal text coloring & badging */
+.badge-gold { background: rgba(212, 175, 55, 0.1) !important; color: #D4AF37 !important; border: 1px solid #D4AF37 !important; }
+.badge-silver { background: rgba(203, 213, 225, 0.1) !important; color: #cbd5e1 !important; border: 1px solid #cbd5e1 !important; }
+.badge-obsidian { background: rgba(0,0,0,0.4) !important; color: #e94057 !important; border: 1px solid #e94057 !important; box-shadow: 0 0 10px rgba(233,64,87,0.3); text-transform: uppercase; letter-spacing: 2px;}
+    
 @keyframes micPulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
   .pulse-mic { animation: micPulse 1s infinite; }
 /* Prevents iOS from highlighting the mic icon or opening the Copy menu */
@@ -4169,22 +4222,75 @@ function renderProfile(data) {
         safeSetText('cardCompany', displayComp);
         safeSetText('cardMemberId', data.memberId || 'VIP-PENDING');
 
-        // 2. Handle Profile Picture vs. Initials Fallback using the CLEANED/MASKED display data
+        // ----------------------------------------------------
+        // DYNAMIC STATUS SIGNALING & GAMIFICATION UPGRADE
+        // ----------------------------------------------------
+        let cardWrapper = document.querySelector('.vip-card-inner');
+        if (!cardWrapper) cardWrapper = document.getElementById('cardWrapper') || document.querySelector('[class*="vip-card"]');
+        
+        if (cardWrapper) {
+            // Remove previous upgrade class tags so we can recalculate
+            cardWrapper.classList.remove('card-tier-ambassador', 'card-tier-corporate', 'card-tier-black', 'card-tier-partner');
+            
+            // Extract user membership statuses and activity points
+            let statusStr = String(data.membershipStatus || data.status || "").toLowerCase();
+            let pointsVal = Number(data.vouchCount || data.points || 0);
+            
+            let statusBadge = document.getElementById('statusBadge') || document.querySelector('.badge-gold, .badge-silver, .badge-obsidian'); 
+            if (statusBadge) statusBadge.className = ''; // wipe old colors
+            
+            // 4-Tier Gamification Logic
+            if (pointsVal >= 500) {
+                // Iridescent Obsidian "Black Card"
+                cardWrapper.classList.add('card-tier-black');
+                safeSetText('cardMemberId', '👑 BLACK CARD EXECUTIVE • ' + (data.memberId || 'VIP-ACTIVE'));
+                
+                let badge = document.querySelector('[class*="global-member"]') || document.querySelector('[class*="badge"]');
+                if (badge) {
+                    badge.className = "badge-obsidian";
+                    badge.innerText = "👑 BLACK CARD";
+                }
+            } else if (statusStr.includes('ambassador')) {
+                // Gold Ambassador Card
+                cardWrapper.classList.add('card-tier-ambassador');
+                let badge = document.querySelector('[class*="global-member"]') || document.querySelector('[class*="badge"]');
+                if (badge) {
+                    badge.className = "badge-gold";
+                    badge.innerText = "AMBASSADOR";
+                }
+            } else if (statusStr.includes('corporate') || statusStr.includes('platinum')) {
+                // Silver Platinum Corporate Card
+                cardWrapper.classList.add('card-tier-corporate');
+                let badge = document.querySelector('[class*="global-member"]') || document.querySelector('[class*="badge"]');
+                if (badge) {
+                    badge.className = "badge-silver";
+                    badge.innerText = "CORPORATE MEMBER";
+                }
+            } else {
+                // Standard VIP / Partner Bronze Dark Class
+                cardWrapper.classList.add('card-tier-partner');
+                let badge = document.querySelector('[class*="global-member"]') || document.querySelector('[class*="badge"]');
+                if (badge) {
+                    badge.className = "badge-silver";
+                    badge.innerText = "VIP MEMBER";
+                }
+            }
+        }
+
+        // 2. Handle Profile Picture vs. Initials Fallback
         if (data.profilePic && data.profilePic.trim() !== "") {
             document.getElementById('cardProfilePic').src = data.profilePic;
             document.getElementById('cardProfilePic').style.display = 'block';
             document.getElementById('cardInitials').style.display = 'none';
         } else {
             document.getElementById('cardProfilePic').style.display = 'none';
-            // Use the display variables here so the badge shows "EM" instead of "CL"
             let initFirst = displayFirst ? displayFirst.charAt(0).toUpperCase() : "E";
             let initLast = displayLast ? displayLast.charAt(0).toUpperCase() : "M";
             document.getElementById('cardInitials').innerText = initFirst + initLast;
             document.getElementById('cardInitials').style.display = 'flex';
         }
 
-// 3. Generate the O2O Partner Verification QR Code
-        // This creates a secure URL. When a partner scans it, it opens a hidden verification screen.
+        // 3. Generate the O2O Partner Verification QR Code
         let verifyUrl = `https://www.asiaceo.club/weeklyconnection?verifyID=${data.memberId || data._id}`;
         let encodedUrl = encodeURIComponent(verifyUrl);
         document.getElementById('cardQrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedUrl}`;
