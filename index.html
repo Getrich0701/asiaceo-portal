@@ -6470,7 +6470,7 @@ window.closeIosDownloadModal = function() {
 // ==========================================
 // O2O PARTNER REDEMPTION ENGINE (UPDATED BRIDGE)
 // ==========================================
-function triggerPartnerVerification(verifyId) {
+function triggerPartnerVerification(verifyId) { 
     // 1. Hide the entire normal portal
     document.getElementById('globalSplashScreen').style.display = 'none';
     if(document.getElementById('authContainer')) document.getElementById('authContainer').style.display = 'none';
@@ -6532,10 +6532,10 @@ function triggerPartnerVerification(verifyId) {
     };
     window.addEventListener('message', verifyListener);
 
-    // 4. 🔥 CRITICAL FIX: Send the Request up to the Wix Parent Window
+    // 4. 🔥 CRITICAL FIX: Send the Request AND the Scanner's Identity up to Wix
     window.parent.postMessage({ 
         action: 'verifyMemberStatus', 
-        args: [verifyId], 
+        args: [verifyId, loggedInUser], 
         callbackId: callbackId 
     }, "*");
 }
