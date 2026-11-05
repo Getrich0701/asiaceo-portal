@@ -4252,42 +4252,22 @@ function renderProfile(data) {
             let pointsVal = Number(data.vouchCount || data.points || 0);
             
             // 4-Tier Gamification Logic
+            let badge = document.getElementById('vipCardBadge'); // 🔥 BULLETPROOF FIX
+
             if (pointsVal >= 500) {
-                // Iridescent Obsidian "Black Card"
                 cardWrapper.classList.add('card-tier-black');
                 safeSetText('cardMemberId', '👑 BLACK CARD EXECUTIVE • ' + (data.memberId || 'VIP-ACTIVE'));
-                
-                let badge = cardWrapper.querySelector('.global-member'); // 🔥 FIX: Scoped to card only
-                if (badge) {
-                    badge.className = "badge-obsidian global-member";
-                    badge.innerText = "👑 BLACK CARD";
-                }
+                if (badge) { badge.className = "badge-obsidian"; badge.innerText = "👑 BLACK CARD"; }
             } else if (statusStr.includes('ambassador')) {
-                // Gold Ambassador Card
                 cardWrapper.classList.add('card-tier-ambassador');
-                let badge = cardWrapper.querySelector('.global-member'); // 🔥 FIX: Scoped to card only
-                if (badge) {
-                    badge.className = "badge-gold global-member";
-                    badge.innerText = "AMBASSADOR";
-                }
+                if (badge) { badge.className = "badge-gold"; badge.innerText = "AMBASSADOR"; }
             } else if (statusStr.includes('corporate') || statusStr.includes('platinum')) {
-                // Silver Platinum Corporate Card
                 cardWrapper.classList.add('card-tier-corporate');
-                let badge = cardWrapper.querySelector('.global-member'); // 🔥 FIX: Scoped to card only
-                if (badge) {
-                    badge.className = "badge-silver global-member";
-                    badge.innerText = "CORPORATE MEMBER";
-                }
+                if (badge) { badge.className = "badge-silver"; badge.innerText = "CORPORATE MEMBER"; }
             } else {
-                // Standard VIP / Partner Bronze Dark Class
                 cardWrapper.classList.add('card-tier-partner');
-                let badge = cardWrapper.querySelector('.global-member'); // 🔥 FIX: Scoped to card only
-                if (badge) {
-                    badge.className = "badge-silver global-member";
-                    badge.innerText = "VIP MEMBER";
-                }
+                if (badge) { badge.className = "badge-silver"; badge.innerText = "VIP MEMBER"; }
             }
-        }
 
         // 2. Handle Profile Picture vs. Initials Fallback
         if (data.profilePic && data.profilePic.trim() !== "") {
