@@ -3755,53 +3755,41 @@ function renderCards(data, containerId, showCheckboxes) {
     data.forEach((item) => { 
         const initials = item.company ? item.company.substring(0, 2).toUpperCase() : 'EX'; 
         
-        // 🔥 SMART AVATAR SWAP 🔥
+        // 🔥 ENCODING FIX: Safe decoding for names with accents (e.g. Gaëlle)
+        let safeFirst = "Executive";
+        let safeLast = "";
+        try { safeFirst = decodeURIComponent(escape(item.firstName || '')); } catch(e) { safeFirst = item.firstName || ''; }
+        try { safeLast = decodeURIComponent(escape(item.lastName || '')); } catch(e) { safeLast = item.lastName || ''; }
+        
+        // 🔥 DATA FIX: Catch Excel date formats (10-Jan, Nov-50) leaking into Company Size
+        let cSize = item.companySize || "";
+        if(cSize === "10-Jan" || cSize === "1-Oct" || cSize === "Jan-10") cSize = "1-10";
+        if(cSize === "Nov-50" || cSize === "11-May") cSize = "11-50";
+
         const avatarHtml = item.profilePic 
             ? `<img src="${item.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` 
             : initials;
 
-        // 🔥 CUSTOM BADGE LOGIC (PRESIDENT OR VIP)
         const badge = item.isPresident ? `<span class="verified-badge" style="color:#3B82F6; font-size:0.8em; margin-left:5px;">🌍 PRESIDENT</span>` : (item.verified ? `<span class="verified-badge" style="color:var(--accent-gold); font-size:0.8em; margin-left:5px;">✔ VIP</span>` : ''); 
         
-        // Vouch Badge Logic
         const vouchCount = item.vouchCount || 0;
         const vouchDisplay = vouchCount > 0 ? `<div class="deal-badge" style="background:rgba(16, 185, 129, 0.1); color:#10B981; border-color:#10B981; float:right; margin:0;">🤝 ${vouchCount} Vouch${vouchCount > 1 ? 'es' : ''}</div>` : '';
 
-        // AI Synergy Display Logic
         let aiDisplay = '';
         if (containerId === 'recCards' && item.synergyPercent) {
-            aiDisplay = `
-                <div class="deal-badge" style="background:rgba(212,175,55,0.1); color:var(--accent-gold); width:fit-content; margin-bottom:10px;">
-                    ${item.synergyPercent}% SYNERGY MATCH
-                </div>
-                <p style="font-size:0.85em; font-style:italic; color:#10B981; margin: 10px 0;">
-                    💡 Why? ${item.aiReason}
-                </p>
-            `;
+            aiDisplay = `<div class="deal-badge" style="background:rgba(212,175,55,0.1); color:var(--accent-gold); width:fit-content; margin-bottom:10px;">${item.synergyPercent}% SYNERGY MATCH</div><p style="font-size:0.85em; font-style:italic; color:#10B981; margin: 10px 0;">💡 Why? ${item.aiReason}</p>`;
         }
 
         let actionHtml = ''; 
-        
         if (showCheckboxes) { 
             actionHtml = `<div class="card-checkbox-container"><input type="checkbox" class="invite-checkbox" onchange="handleCheckboxChange()" value="${item.originalIndex}" data-raw="${escape(JSON.stringify(item))}"></div>`; 
         } else { 
-
-actionHtml = `
-            <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:15px;">
-                <div style="display:flex; gap:10px; align-items:center; width:100%;">
-                    <button class="icon-btn" style="width:42px; height:42px; border:1px solid var(--accent-gold); color:var(--accent-gold); flex-shrink:0; font-size:1.2em; background:transparent;" onclick="toggleBookmark('Directory', '${escape(JSON.stringify(item))}', this)" title="Save to Bookmarks">🔖</button>
-                    <button class="btn-primary" style="flex:1; background: linear-gradient(135deg, var(--elite-purple), #4C1D95); color: #fff; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2); border: none; padding:10px; font-size:0.85em;" onclick="requestWarmIntroAction(this, '${escape(JSON.stringify(item))}')">✨ Intro</button>
-                </div>
-                <button class="btn-primary" style="width:100%; padding:14px; font-size:1em;" onclick="requestConnection(${item.originalIndex}, this, '${escape(JSON.stringify(item.rawData))}')">Request Connection</button>
-            </div>`;
-
+            let safeDataStr = escape(JSON.stringify(item));
+            actionHtml = `<div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:15px;"><div style="display:flex; gap:10px; align-items:center; width:100%;"><button class="icon-btn" style="width:42px; height:42px; border:1px solid var(--accent-gold); color:var(--accent-gold); flex-shrink:0; font-size:1.2em; background:transparent;" onclick="toggleBookmark('Directory', '${safeDataStr}', this)" title="Save to Bookmarks">🔖</button><button class="btn-primary" style="flex:1; background: linear-gradient(135deg, var(--elite-purple), #4C1D95); color: #fff; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2); border: none; padding:10px; font-size:0.85em;" onclick="requestWarmIntroAction(this, '${safeDataStr}')">✨ Intro</button></div><button class="btn-primary" style="width:100%; padding:14px; font-size:1em;" onclick="requestConnection(${item.originalIndex}, this, '${escape(JSON.stringify(item.rawData))}')">Request Connection</button></div>`;
         } 
 
         const card = document.createElement('div'); 
         card.className = 'profile-card'; 
-        
-        let targetEmailForLog = item.email || (item.rawData ? item.rawData[7] : "");
-
         card.innerHTML = `
             ${showCheckboxes ? actionHtml : ''}
             <div style="cursor: pointer;" onclick="showProfileModal('${escape(JSON.stringify(item))}')">
@@ -3810,7 +3798,7 @@ actionHtml = `
                     <div class="card-title">
                         ${vouchDisplay}
                         <h4 style="margin:0 0 4px 0; font-size:1.15em; display:flex; align-items:center; gap:6px;">${item.company} ${badge}</h4>
-                        <p style="margin:0; font-size:0.9em; font-weight:600;">${item.firstName} ${item.lastName}</p>
+                        <p style="margin:0; font-size:0.9em; font-weight:600;">${safeFirst} ${safeLast}</p>
                         <p style="margin:0; font-size:0.85em;">${item.title} • ${item.country}</p>
                     </div>
                 </div>
@@ -3819,16 +3807,14 @@ actionHtml = `
                     <div class="card-tag"><strong>Industry:</strong> ${item.industry}</div>
                     <div class="card-tag"><strong>Expertise:</strong> ${item.expertise}</div>
                     <div class="card-tag"><strong>Looking For:</strong> ${item.lookingFor}</div>
-                    <div class="card-tag"><strong>Company Size:</strong> ${item.companySize}</div>
+                    <div class="card-tag"><strong>Company Size:</strong> ${cSize}</div>
                 </div>
             </div>
             ${!showCheckboxes ? actionHtml : ''}
         `;
-
         container.appendChild(card); 
     }); 
 }
-
 
 function showProfileModal(itemStr) {
     let item = JSON.parse(unescape(itemStr));
