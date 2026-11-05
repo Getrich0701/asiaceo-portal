@@ -12,6 +12,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
+/* 🔥 FIX: Anchors the native dropdown to the pill */
+.pulse-action-btn {
+    position: relative; 
+    overflow: hidden;
+}
+.pulse-action-btn select {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+    
 /* Base Luxury card animations */
 @keyframes metallicShine {
     0% { background-position: -200% 0; }
@@ -2102,14 +2117,14 @@ html, body {
             <p id="cardCompany" class="vip-company"></p>
         </div>
 
-      <!-- Glassmorphic QR Module -->
+   <!-- Glassmorphic QR Module -->
         <div class="vip-qr-module" style="margin-bottom: 15px;">
             <div class="vip-qr-box">
                 <img id="cardQrCode" src="" style="width: 75px; height: 75px; display: block;">
             </div>
             <div class="vip-qr-text">
-                <h4>Scan to Connect</h4>
-                <p>Add this executive directly to your secure device contacts.</p>
+                <h4>Scan for VIP Access</h4>
+                <p>Present to partner venue staff for instant verification.</p>
             </div>
         </div>
 
@@ -4236,42 +4251,39 @@ function renderProfile(data) {
             let statusStr = String(data.membershipStatus || data.status || "").toLowerCase();
             let pointsVal = Number(data.vouchCount || data.points || 0);
             
-            let statusBadge = document.getElementById('statusBadge') || document.querySelector('.badge-gold, .badge-silver, .badge-obsidian'); 
-            if (statusBadge) statusBadge.className = ''; // wipe old colors
-            
             // 4-Tier Gamification Logic
             if (pointsVal >= 500) {
                 // Iridescent Obsidian "Black Card"
                 cardWrapper.classList.add('card-tier-black');
                 safeSetText('cardMemberId', '👑 BLACK CARD EXECUTIVE • ' + (data.memberId || 'VIP-ACTIVE'));
                 
-                let badge = document.querySelector('[class*="global-member"]') || document.querySelector('[class*="badge"]');
+                let badge = cardWrapper.querySelector('.global-member'); // 🔥 FIX: Scoped to card only
                 if (badge) {
-                    badge.className = "badge-obsidian";
+                    badge.className = "badge-obsidian global-member";
                     badge.innerText = "👑 BLACK CARD";
                 }
             } else if (statusStr.includes('ambassador')) {
                 // Gold Ambassador Card
                 cardWrapper.classList.add('card-tier-ambassador');
-                let badge = document.querySelector('[class*="global-member"]') || document.querySelector('[class*="badge"]');
+                let badge = cardWrapper.querySelector('.global-member'); // 🔥 FIX: Scoped to card only
                 if (badge) {
-                    badge.className = "badge-gold";
+                    badge.className = "badge-gold global-member";
                     badge.innerText = "AMBASSADOR";
                 }
             } else if (statusStr.includes('corporate') || statusStr.includes('platinum')) {
                 // Silver Platinum Corporate Card
                 cardWrapper.classList.add('card-tier-corporate');
-                let badge = document.querySelector('[class*="global-member"]') || document.querySelector('[class*="badge"]');
+                let badge = cardWrapper.querySelector('.global-member'); // 🔥 FIX: Scoped to card only
                 if (badge) {
-                    badge.className = "badge-silver";
+                    badge.className = "badge-silver global-member";
                     badge.innerText = "CORPORATE MEMBER";
                 }
             } else {
                 // Standard VIP / Partner Bronze Dark Class
                 cardWrapper.classList.add('card-tier-partner');
-                let badge = document.querySelector('[class*="global-member"]') || document.querySelector('[class*="badge"]');
+                let badge = cardWrapper.querySelector('.global-member'); // 🔥 FIX: Scoped to card only
                 if (badge) {
-                    badge.className = "badge-silver";
+                    badge.className = "badge-silver global-member";
                     badge.innerText = "VIP MEMBER";
                 }
             }
