@@ -3214,8 +3214,40 @@ function meetAtBar(emailStr, nameStr) {
     }, 800);
 }
 
-function loadAdminAnalytics() { document.getElementById('adminLoading').style.display = 'block'; document.getElementById('adminContent').style.display = 'none'; google.script.run.withSuccessHandler(res => { document.getElementById('adminLoading').style.display = 'none'; if(res.success) { document.getElementById('statMembers').innerText = res.totalMembers; document.getElementById('statDeals').innerText = res.activeDeals; document.getElementById('statMessages').innerText = res.totalMessages; document.getElementById('statCredits').innerText = res.totalCredits; document.getElementById('statPayouts').innerText = "$" + res.pendingWithdrawals; document.getElementById('adminContent').style.display = 'block'; loadAdminApprovals(); loadAdminWarmIntros(); } else { alert("Admin Error: " + res.error); } }).getAdminAnalytics(loggedInUser); }
+function loadAdminAnalytics() { 
+    document.getElementById('adminLoading').style.display = 'block'; 
+    document.getElementById('adminContent').style.display = 'none'; 
+    
+    google.script.run.withSuccessHandler(res => { 
+        document.getElementById('adminLoading').style.display = 'none'; 
+        
+        // 🔥 HIGH PRIORITY FIX: Explicitly unhide the admin content container upon response
+        document.getElementById('adminContent').style.display = 'block'; 
 
+        if (res && res.success) { 
+            document.getElementById('statMembers').innerText = res.totalMembers; 
+            document.getElementById('statDeals').innerText = res.activeDeals; 
+            document.getElementById('statMessages').innerText = res.totalMessages; 
+            document.getElementById('statCredits').innerText = res.totalCredits; 
+            document.getElementById('statPayouts').innerText = "$" + res.pendingWithdrawals; 
+            
+            // Trigger subsequent loads only after container is visible
+            loadAdminApprovals(); 
+            loadAdminWarmIntros(); 
+        } else { 
+            alert("Admin Warning: Could not fetch initial analytics. " + (res.error || "")); 
+            // Fallback load anyway so the admin can at least see the approvals queue
+            loadAdminApprovals(); 
+            loadAdminWarmIntros(); 
+        } 
+    }).withFailureHandler(err => {
+        document.getElementById('adminLoading').style.display = 'none';
+        // Even if it fails, unhide the container so the UI isn't completely frozen
+        document.getElementById('adminContent').style.display = 'block'; 
+        alert("Admin Backend Error: " + err.message);
+    }).getAdminAnalytics(loggedInUser); 
+}
+    
 function loadAdminApprovals() { 
     document.getElementById('approvalLoading').style.display = 'block'; 
     document.getElementById('approvalQueueContainer').innerHTML = ''; 
