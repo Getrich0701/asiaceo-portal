@@ -2852,14 +2852,6 @@ let portalInitialized = false; // 🔥 THIS STOPS THE LOGIN LOOP CRASH
 let biometricRequested = false;
 
 function initializePortal() {
-    // 🔥 NEW: O2O Verification Interceptor
-    let urlParams = new URLSearchParams(window.location.search);
-    let verifyId = urlParams.get('verifyID');
-    if (verifyId) {
-        triggerPartnerVerification(verifyId);
-        return; // Stops the rest of the portal from loading!
-    }
-    
     // 🔥 If it already ran, stop it from running again!
     if (portalInitialized) return; 
     portalInitialized = true;
@@ -2908,14 +2900,22 @@ function initializePortal() {
         }
     }
 
-    // 🔥 AUTO LOGIN ENGINE
-    if (localStorage.getItem('cardsUserEmail') && localStorage.getItem('cardsUserPass')) { 
+    // 🔥 HIGH PRIORITY FIX: Session Survival & Auto Login Engine
+    let savedSession = null;
+    let savedPass = null;
+    
+    try {
+        savedSession = localStorage.getItem('cardsUserEmail') || localStorage.getItem('asiaCeoSession');
+        savedPass = localStorage.getItem('cardsUserPass');
+    } catch(e) { console.warn("Storage restricted"); }
+
+    if (savedSession) { 
         // Instantly hide the login screen so the user never sees it
         document.getElementById('loginView').style.display = 'none';
         document.getElementById('authContainer').style.display = 'none';
 
-        document.getElementById('userEmail').value = localStorage.getItem('cardsUserEmail');
-        document.getElementById('userPassword').value = localStorage.getItem('cardsUserPass');
+        document.getElementById('userEmail').value = savedSession;
+        if (savedPass) document.getElementById('userPassword').value = savedPass;
         document.getElementById('rememberMe').checked = true;
         
         attemptLogin(); 
