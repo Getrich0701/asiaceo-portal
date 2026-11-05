@@ -731,12 +731,14 @@ html, body {
     .top-header { flex-direction: column !important; padding: 15px !important; }
     .omni-search-wrapper { max-width: 100% !important; margin-right: 0 !important; margin-bottom: 10px !important; }
     
-    /* 🔥 FIX: Allow nav buttons to wrap text so "Partner Hub" doesn't clip */
+    /* 🔥 FIX: Force buttons to maintain their shape and NOT clip text */
     .sidebar-btn { 
-        white-space: normal !important; 
-        min-width: 110px !important; 
-        text-align: center; 
-        line-height: 1.2; 
+        white-space: nowrap !important; 
+        display: inline-flex !important; 
+        align-items: center;
+        justify-content: center;
+        padding: 8px 18px !important;
+        min-width: max-content !important;
     }
 
     /* 🔥 FIX: Force Directory & Event filters to stack cleanly on mobile */
@@ -745,7 +747,8 @@ html, body {
         margin-bottom: 10px;
     }
     
-    /* 🔥 FIX: Stop Bounty Dropdown from covering the Post button */
+    /* 🔥 FIX: Force Bounty elements to stack cleanly on mobile */
+    .pulse-input-area > div { flex-direction: column; align-items: stretch !important; }
     #pulseBountySelect { 
         width: 100% !important; 
         margin-bottom: 10px; 
@@ -1695,32 +1698,48 @@ html, body {
         </div>
 <div id="dealRecommendationsSection" style="display:none; margin-bottom:40px;"><h3 class="section-title">🔥 Latest Deals</h3><div id="dealRecCards" class="card-grid"></div></div><div class="container"><h3 class="section-title" style="margin-top:0;">Search Deal Flow</h3><div class="search-container"><select id="searchDealIndustry"><option value="">All Industries</option></select><select id="searchDealGeo"><option value="">All Geographies</option></select><select id="searchDealSize"><option value="">All Project Sizes</option></select><div style="display:flex; gap:10px; width:100%;"><button onclick="performDealSearch()" class="btn-primary" style="flex:2;">Search Deals</button><button onclick="clearDealFilters()" class="btn-secondary" style="flex:1;">Clear</button></div></div></div><div id="dealsLoading" style="display:none;"></div><div id="dealSearchResultsArea" style="display:none;"><h3 class="section-title" id="dealResultsCountHeader">All Approved Deals</h3><div id="dealCardsArea" class="card-grid"></div></div></div>
 
-<div id="postDealTabContainer" class="container" style="display:none;"><h2>Post a Business Deal</h2><p style="color:var(--secondary-slate); font-size:0.95em; margin-bottom:25px;">Submit your M&A, capital raise, or partnership opportunity anonymously.</p><div id="dealMsg" class="success-msg"></div><div id="dealError" class="error-msg"></div>
+<div id="postDealTabContainer" class="container" style="display:none;">
+    <h2>Post a Business Deal</h2>
+    <p style="color:var(--secondary-slate); font-size:0.95em; margin-bottom:25px;">Submit your M&A, capital raise, or partnership opportunity anonymously.</p>
+    <div id="dealMsg" class="success-msg"></div>
+    <div id="dealError" class="error-msg"></div>
 
-<div class="profile-grid">
-    <div class="input-group"><label>Title</label><input type="text" id="dealTitle"></div>
-    <div class="input-group"><label>Type</label>
-        <select id="dealType"><option value="Capital Raise">Capital Raise</option><option value="M&A">M&A</option><option value="Partnership">Partnership</option></select>
+    <div class="profile-grid">
+        <div class="input-group"><label>Title</label><input type="text" id="dealTitle"></div>
+        <div class="input-group"><label>Type</label>
+            <select id="dealType">
+                <option value="Capital Raise">Capital Raise</option>
+                <option value="M&A">M&A</option>
+                <option value="Partnership">Partnership</option>
+            </select>
+        </div>
+        <div class="input-group"><label>Industry</label><input type="text" id="dealIndustry"></div>
+        <div class="input-group"><label>Geography</label><input type="text" id="dealGeo"></div>
+        <div class="input-group"><label>Target Raise / Deal Size</label><input type="text" id="dealSize" placeholder="e.g. $5M"></div>
+        <div class="input-group"><label>Confidential VDR Link <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Hidden pre-NDA)</span></label><input type="url" id="dealVdrLink" placeholder="e.g. DocSend, Google Drive..."></div>
+        
+        <!-- 🔥 NEW: ZKP Blind Financials -->
+        <div class="input-group" style="background:rgba(212, 175, 55, 0.05); padding:10px; border-radius:8px; border:1px dashed var(--accent-gold);">
+            <label>Current ARR / Revenue <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Blind Metric)</span></label>
+            <input type="text" id="dealArr" placeholder="e.g. $2.5M" style="background:var(--bg-dark);">
+        </div>
+        <div class="input-group" style="background:rgba(212, 175, 55, 0.05); padding:10px; border-radius:8px; border:1px dashed var(--accent-gold);">
+            <label>Current EBITDA <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Blind Metric)</span></label>
+            <input type="text" id="dealEbitda" placeholder="e.g. $500k" style="background:var(--bg-dark);">
+        </div>
     </div>
-    <div class="input-group"><label>Industry</label><input type="text" id="dealIndustry"></div>
-    <div class="input-group"><label>Geography</label><input type="text" id="dealGeo"></div>
-    <div class="input-group"><label>Target Raise / Deal Size</label><input type="text" id="dealSize" placeholder="e.g. $5M"></div>
-    <div class="input-group"><label>Confidential VDR Link <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Hidden pre-NDA)</span></label><input type="url" id="dealVdrLink" placeholder="e.g. DocSend, Google Drive..."></div>
+
+    <div class="input-group"><label>Highlights</label><textarea id="dealDesc" rows="5"></textarea></div>
+
+    <div class="input-group">
+        <label>Executive Summary / Pitch Deck Details <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Confidential - Secure VDR Access Only)</span></label>
+        <textarea id="dealRawPitch" rows="6" placeholder="Paste your pitch deck text, cap table, or data room notes here. Investors must sign your NDA to read this."></textarea>
+    </div>
     
-    <!-- 🔥 NEW: ZKP Blind Financials -->
-    <div class="input-group" style="background:rgba(212, 175, 55, 0.05); padding:10px; border-radius:8px; border:1px dashed var(--accent-gold);">
-        <label>Current ARR / Revenue <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Blind Metric)</span></label>
-        <input type="text" id="dealArr" placeholder="e.g. $2.5M" style="background:var(--bg-dark);">
-    </div>
-    <div class="input-group" style="background:rgba(212, 175, 55, 0.05); padding:10px; border-radius:8px; border:1px dashed var(--accent-gold);">
-        <label>Current EBITDA <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Blind Metric)</span></label>
-        <input type="text" id="dealEbitda" placeholder="e.g. $500k" style="background:var(--bg-dark);">
-    </div>
+    <!-- 🔥 UPDATED BUTTON TEXT -->
+    <button onclick="submitDealForm()" class="btn-primary" id="btnSubmitDeal">Submit Deal (+50 Points)</button>
+    <div id="dealLoading" class="loader" style="margin-top:15px;">Submitting...</div>
 </div>
-
-<div class="input-group"><label>Highlights</label><textarea id="dealDesc" rows="5"></textarea></div>
-
-<div class="input-group"><label>Executive Summary / Pitch Deck Details <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Confidential - Secure VDR Access Only)</span></label><textarea id="dealRawPitch" rows="6" placeholder="Paste your pitch deck text, cap table, or data room notes here. Investors must sign your NDA to read this."></textarea></div><button onclick="submitDealForm()" class="btn-primary" id="btnSubmitDeal">Submit Deal to Concierge</button><div id="dealLoading" class="loader" style="margin-top:15px;">Submitting...</div></div>
             
 
 <div id="talentBoardTabContainer" style="display:none;">
@@ -2236,7 +2255,32 @@ html, body {
 
 </div> <!-- Closes profileTabContainer -->
       
-<div id="referralsTabContainer" style="display:none;"><div class="container"><h2>Partner Portal</h2><div class="profile-grid"><div style="background:var(--primary-navy); padding:25px; border-radius:12px; text-align:center; border:1px solid var(--border-color);"><strong>Total Paid</strong><div id="refTotalPaid" style="font-size:2.5em; font-weight:300; color:var(--text-light); margin-top:5px; font-family:'Playfair Display', serif;">$0</div></div><div style="background:rgba(239, 68, 68, 0.1); padding:25px; border-radius:12px; text-align:center; border:1px solid #EF4444;"><strong>Pending Payout</strong><div id="refPendingPaid" style="font-size:2.5em; font-weight:300; color:#EF4444; margin-top:5px; font-family:'Playfair Display', serif;">$0</div><button id="btnWithdrawAction" class="btn-primary" onclick="openWithdrawModal()" style="background:#EF4444; color:#fff; margin-top:15px; padding:8px; box-shadow:none;">Withdraw Funds</button></div></div></div><div id="referralLoading" style="display:none;"></div><div id="referralContainer" style="display:none;"></div></div>
+<div id="referralsTabContainer" style="display:none;">
+    <div class="container">
+        <h2>Partner Hub</h2>
+        
+        <!-- 🔥 NEW: Partner VIP Scanner Shortcut -->
+        <div style="background:rgba(16, 185, 129, 0.1); border:1px solid #10B981; padding:20px; border-radius:12px; text-align:center; margin-bottom:20px;">
+            <h3 style="color:#10B981; margin-top:0;">VIP Door Scanner</h3>
+            <p style="color:var(--secondary-slate); font-size:0.9em; margin-bottom:15px;">Verify members and trigger Live Radar matchmaking at your venue.</p>
+            <button class="btn-primary" style="background:#10B981; color:#fff; border:none; box-shadow:0 4px 15px rgba(16,185,129,0.3); width:auto;" onclick="document.getElementById('adminTabContainer').style.display='block'; switchTab('scanner');">📷 Open Scanner Terminal</button>
+        </div>
+
+        <div class="profile-grid">
+            <div style="background:var(--primary-navy); padding:25px; border-radius:12px; text-align:center; border:1px solid var(--border-color);">
+                <strong>Total Paid</strong>
+                <div id="refTotalPaid" style="font-size:2.5em; font-weight:300; color:var(--text-light); margin-top:5px; font-family:'Playfair Display', serif;">$0</div>
+            </div>
+            <div style="background:rgba(239, 68, 68, 0.1); padding:25px; border-radius:12px; text-align:center; border:1px solid #EF4444;">
+                <strong>Pending Payout</strong>
+                <div id="refPendingPaid" style="font-size:2.5em; font-weight:300; color:#EF4444; margin-top:5px; font-family:'Playfair Display', serif;">$0</div>
+                <button id="btnWithdrawAction" class="btn-primary" onclick="openWithdrawModal()" style="background:#EF4444; color:#fff; margin-top:15px; padding:8px; box-shadow:none;">Withdraw Funds</button>
+            </div>
+        </div>
+    </div>
+    <div id="referralLoading" style="display:none;"></div>
+    <div id="referralContainer" style="display:none;"></div>
+</div>
            
 
 <div id="travelBoardTabContainer" style="display:none;">
@@ -3748,7 +3792,6 @@ function updateBadges() {
   
 function clearFilters() { ['industry','country','company','title'].forEach(i => document.getElementById(i).value=''); if(document.getElementById('searchCompanySize')) document.getElementById('searchCompanySize').value='All'; }
   function performInviteSearch() { document.getElementById('bulkActionBar').style.display = 'none'; document.getElementById('invSearchResultsArea').style.display = 'block'; document.getElementById('invResultsCountHeader').innerText = "Finding executives..."; document.getElementById('invCardContainer').innerHTML = getCardSkeletonHTML(6); google.script.run.withSuccessHandler(res => { document.getElementById('invResultsCountHeader').innerText = res.length > 0 ? `Select Guests (${res.length})` : "No Results Found"; renderCards(res, 'invCardContainer', true); }).searchData(document.getElementById('invIndustry').value, document.getElementById('invCountry').value, document.getElementById('invCompany').value, document.getElementById('invTitle').value, "All", Date.now()); }  
-
 function renderCards(data, containerId, showCheckboxes) { 
     const container = document.getElementById(containerId); 
     container.innerHTML = '';
