@@ -3701,36 +3701,42 @@ function verifyOTP() {
             loadTerminalData();
             loadDispatchBanner(); 
             
-            // 🔥 NEW: Trigger the Nexus Engine on OTP Login
-            google.script.run.withSuccessHandler(nexusRes => {
-                if (nexusRes && nexusRes.success && nexusRes.matches.length > 0) {
-                    document.getElementById('nexusEngineSection').style.display = 'block';
+// 🔥 Trigger the Nexus Engine on Login
+        google.script.run.withSuccessHandler(nexusRes => {
+            if (nexusRes && nexusRes.success && nexusRes.matches.length > 0) {
+                document.getElementById('nexusEngineSection').style.display = 'block';
+                
+                let nArea = document.getElementById('nexusCardsArea');
+                nArea.innerHTML = '';
+                nexusRes.matches.forEach(m => {
+                    const initials = m.company ? m.company.substring(0, 2).toUpperCase() : 'EX'; 
+                    const avatarHtml = m.profilePic ? `<img src="${m.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : initials;
                     
-                    let nArea = document.getElementById('nexusCardsArea');
-                    nArea.innerHTML = '';
-                    nexusRes.matches.forEach(m => {
-                        const initials = m.company ? m.company.substring(0, 2).toUpperCase() : 'EX'; 
-                        const avatarHtml = m.profilePic ? `<img src="${m.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : initials;
-                        
-                        nArea.innerHTML += `
-                        <div class="profile-card" style="border-color:var(--accent-gold);">
-                            <div class="card-header">
-                                <div class="avatar">${avatarHtml}</div>
-                                <div class="card-title">
-                                    <h4 style="margin:0 0 4px 0;">${m.company}</h4>
-                                    <p style="margin:0; font-weight:600;">${m.firstName} ${m.lastName}</p>
-                                    <p style="margin:0; font-size:0.85em;">${m.title}</p>
-                                </div>
+                    // 🔥 ENCODING FIX FOR NEXUS ENGINE
+                    let safeFirst = "Executive";
+                    let safeLast = "";
+                    try { safeFirst = decodeURIComponent(escape(m.firstName || '')); } catch(e) { safeFirst = m.firstName || ''; }
+                    try { safeLast = decodeURIComponent(escape(m.lastName || '')); } catch(e) { safeLast = m.lastName || ''; }
+                    
+                    nArea.innerHTML += `
+                    <div class="profile-card" style="border-color:var(--accent-gold);">
+                        <div class="card-header">
+                            <div class="avatar">${avatarHtml}</div>
+                            <div class="card-title">
+                                <h4 style="margin:0 0 4px 0;">${m.company}</h4>
+                                <p style="margin:0; font-weight:600;">${safeFirst} ${safeLast}</p>
+                                <p style="margin:0; font-size:0.85em;">${m.title}</p>
                             </div>
-                            <div class="card-body">
-                                <div class="card-tag" style="background:rgba(16, 185, 129, 0.1); color:#10B981; border-color:#10B981;"><strong>They Need:</strong> ${m.theirNeed}</div>
-                                <div class="card-tag" style="background:rgba(212, 175, 55, 0.1); color:var(--accent-gold); border-color:var(--accent-gold);"><strong>They Offer:</strong> ${m.theirOffer}</div>
-                            </div>
-                            <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="openChat('${escape(m.email)}', '${escape(m.firstName + ' ' + m.lastName)}')">Initiate Warm Intro</button>
-                        </div>`;
-                    });
-                }
-            }).getNexusMatches(loggedInUser);
+                        </div>
+                        <div class="card-body">
+                            <div class="card-tag" style="background:rgba(16, 185, 129, 0.1); color:#10B981; border-color:#10B981;"><strong>They Need:</strong> ${m.theirNeed}</div>
+                            <div class="card-tag" style="background:rgba(212, 175, 55, 0.1); color:var(--accent-gold); border-color:var(--accent-gold);"><strong>They Offer:</strong> ${m.theirOffer}</div>
+                        </div>
+                        <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="openChat('${escape(m.email)}', '${escape((m.firstName||'') + ' ' + (m.lastName||''))}')">Initiate Warm Intro</button>
+                    </div>`;
+                });
+            }
+        }).getNexusMatches(loggedInUser);
 
         } else { 
             msgDiv.innerText = res.error || "Invalid passcode."; 
