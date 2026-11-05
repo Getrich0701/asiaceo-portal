@@ -4352,6 +4352,11 @@ function renderProfile(data) {
         let safeSet = (id, val) => { let el = document.getElementById(id); if (el) el.value = val || ''; };
         let safeSetText = (id, val) => { let el = document.getElementById(id); if (el) el.innerText = val || '0'; };
 
+        // 🔥 EXCEL DATE SANITIZER
+        let cSize = data.companySize || "";
+        if(cSize === "10-Jan" || cSize === "1-Oct" || cSize === "Jan-10") cSize = "1-10";
+        if(cSize === "Nov-50" || cSize === "11-May") cSize = "11-50";
+
         // Populate the edit form inputs with the TRUE data (blank if it was junk)
         safeSet('profFirstName', inputFirst);
         safeSet('profLastName', inputLast); 
@@ -4361,7 +4366,7 @@ function renderProfile(data) {
         safeSet('profOffer', data.currentOffer); 
         safeSet('profLooking', data.lookingFor); 
         safeSet('profCountry', data.country); 
-        safeSet('profCompanySize', data.companySize); 
+        safeSet('profCompanySize', cSize); // 🔥 Apply Sanitized Data
         safeSet('profCalendly', data.calendlyLink); 
         safeSet('profHiddenBase64Pic', data.profilePic);
 
@@ -4407,7 +4412,7 @@ function renderProfile(data) {
                 cardWrapper.classList.add('card-tier-partner');
                 if (badge) { badge.className = "badge-silver"; badge.innerText = "VIP MEMBER"; }
             }
-        } // 🔥 THIS IS THE MISSING BRACE THAT CRASHED THE PORTAL
+        } 
 
         // 2. Handle Profile Picture vs. Initials Fallback
         if (data.profilePic && data.profilePic.trim() !== "") {
@@ -4423,8 +4428,7 @@ function renderProfile(data) {
             document.getElementById('cardInitials').style.display = 'flex';
         }
 
-      // 3. Generate the O2O Partner Verification QR Code
-        // 🔥 FIX: Restored the proper Partner Gateway URL instead of the dense vCard
+        // 3. Generate the O2O Partner Verification QR Code
         let verifyUrl = `https://www.asiaceo.club/weeklyconnection?verifyID=${data.memberId || data._id}`;
         let encodedUrl = encodeURIComponent(verifyUrl);
         let qrCodeEl = document.getElementById('cardQrCode');
@@ -4445,7 +4449,7 @@ function renderProfile(data) {
 
         let fields = [ 
             data.firstName, data.lastName, data.company, data.title, data.expertise, 
-            data.currentOffer, data.lookingFor, data.country, data.companySize
+            data.currentOffer, data.lookingFor, data.country, cSize
         ]; 
         
         let filledCount = fields.filter(f => f && typeof f === 'string' && f.trim() !== "" && f !== "Select Company Size").length;
