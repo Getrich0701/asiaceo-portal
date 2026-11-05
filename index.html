@@ -4925,11 +4925,14 @@ function loadPulseFeed() {
                     }
                 }
 
-                // 🔥 ESCROW UI FIX: Handles claiming, releasing, and locked states based on user identity
+                // 🔥 ESCROW UI FIX: Handles claiming, releasing, and locked states
                 if (u.bountyStatus === 'Active' && (u.email || "").toLowerCase() !== loggedInUser.toLowerCase()) {
-                    actionText = `🤝 Claim ${u.bountyAmount} Credits`;
-                    // When clicked, open the chat but also claim the bounty
-                    actionHtml = `<div class="pulse-action"><button class="pulse-action-btn" style="border-color:#EF4444; background:#EF4444; color:#fff; font-weight:bold;" onclick="claimIntroBounty('${u.id}', '${escape(u.email)}', '${escape(u.name || 'Executive')}')">${actionText}</button></div>`; 
+                    // 🔥 GRAMMAR FIX: Dynamically adds 's' for plurals
+                    actionText = `🤝 Claim ${u.bountyAmount} Credit${u.bountyAmount > 1 ? 's' : ''}`;
+                    // 🔥 ENCODING FIX: Safely wrap name parsing
+                    let safeName = "";
+                    try { safeName = decodeURIComponent(escape(u.name || 'Executive')); } catch(e) { safeName = "Executive"; }
+                    actionHtml = `<div class="pulse-action"><button class="pulse-action-btn" style="border-color:#EF4444; background:#EF4444; color:#fff; font-weight:bold;" onclick="claimIntroBounty('${u.id}', '${escape(u.email)}', '${escape(safeName)}')">${actionText}</button></div>`; 
                 } else if (u.bountyStatus === 'In Progress' && (u.email || "").toLowerCase() === loggedInUser.toLowerCase()) {
                     // Original poster sees the Release Points button
                     actionHtml = `<div class="pulse-action"><button class="pulse-action-btn" style="border-color:#10B981; background:#10B981; color:#fff; font-weight:bold;" onclick="confirmBountyRelease('${u.id}')">Release ${u.bountyAmount} Points</button></div>`;
@@ -4943,11 +4946,13 @@ function loadPulseFeed() {
                 }
             } 
             
-            // Standard message button for non-bounty posts (or if it's your own active bounty)
+            // Standard message button for non-bounty posts
             if (!actionHtml && (u.email || "").toLowerCase() !== loggedInUser.toLowerCase()) { 
-                let safeName = escape(u.name || 'Executive'); 
+                // 🔥 ENCODING FIX: Apply to standard messages too
+                let safeName = "Executive";
+                try { safeName = decodeURIComponent(escape(u.name || 'Executive')); } catch(e) {}
                 let safeEmail = escape(u.email); 
-                actionHtml = `<div class="pulse-action"><button class="pulse-action-btn" onclick="openChat('${safeEmail}', '${safeName}')">${actionText}</button></div>`; 
+                actionHtml = `<div class="pulse-action"><button class="pulse-action-btn" onclick="openChat('${safeEmail}', '${escape(safeName)}')">${actionText}</button></div>`; 
             } 
 
             let displayTime = "Recently";
@@ -4964,7 +4969,11 @@ function loadPulseFeed() {
                 ? `<img src="${u.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` 
                 : u.initials;
                 
-            card.innerHTML = `<div class="pulse-avatar" style="padding:0; overflow:hidden;">${avatarHtml}</div><div class="pulse-content"><div class="pulse-header"><div><p class="pulse-name">${u.name}</p><p class="pulse-title">${u.title} at ${u.company}</p></div><div class="pulse-time">${displayTime}</div></div>${bountyHtml}<p class="pulse-text">${escapeHTML(u.text)}</p>${actionHtml}</div>`;
+            // 🔥 ENCODING FIX: Safely render the name in the header
+            let displayHeaderName = "Executive";
+            try { displayHeaderName = decodeURIComponent(escape(u.name || 'Executive')); } catch(e) {}
+
+            card.innerHTML = `<div class="pulse-avatar" style="padding:0; overflow:hidden;">${avatarHtml}</div><div class="pulse-content"><div class="pulse-header"><div><p class="pulse-name">${displayHeaderName}</p><p class="pulse-title">${u.title} at ${u.company}</p></div><div class="pulse-time">${displayTime}</div></div>${bountyHtml}<p class="pulse-text">${escapeHTML(u.text)}</p>${actionHtml}</div>`;
             
             feedArea.appendChild(card); 
         });
@@ -4973,7 +4982,7 @@ function loadPulseFeed() {
         feedArea.innerHTML = `<div class="error-msg" style="display:block;">Failed to load feed: ${err.message}</div>`;
     }).getPulseUpdates(Date.now());
 }
-
+    
 // 1. Updated Submission Handler
 function submitPulse() { 
     const textObj = document.getElementById('pulseInputText'); 
