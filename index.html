@@ -4275,23 +4275,29 @@ function renderProfile(data) {
             let statusStr = String(data.membershipStatus || data.status || "").toLowerCase();
             let pointsVal = Number(data.vouchCount || data.points || 0);
             
-            // 4-Tier Gamification Logic
-            let badge = document.getElementById('vipCardBadge'); // 🔥 BULLETPROOF FIX
+            // 🔥 BULLETPROOF FIX: Use the specific ID for the badge
+            let badge = document.getElementById('vipCardBadge'); 
 
+            // 4-Tier Gamification Logic
             if (pointsVal >= 500) {
+                // Iridescent Obsidian "Black Card"
                 cardWrapper.classList.add('card-tier-black');
                 safeSetText('cardMemberId', '👑 BLACK CARD EXECUTIVE • ' + (data.memberId || 'VIP-ACTIVE'));
                 if (badge) { badge.className = "badge-obsidian"; badge.innerText = "👑 BLACK CARD"; }
             } else if (statusStr.includes('ambassador')) {
+                // Gold Ambassador Card
                 cardWrapper.classList.add('card-tier-ambassador');
                 if (badge) { badge.className = "badge-gold"; badge.innerText = "AMBASSADOR"; }
             } else if (statusStr.includes('corporate') || statusStr.includes('platinum')) {
+                // Silver Platinum Corporate Card
                 cardWrapper.classList.add('card-tier-corporate');
                 if (badge) { badge.className = "badge-silver"; badge.innerText = "CORPORATE MEMBER"; }
             } else {
+                // Standard VIP / Partner Bronze Dark Class
                 cardWrapper.classList.add('card-tier-partner');
                 if (badge) { badge.className = "badge-silver"; badge.innerText = "VIP MEMBER"; }
             }
+        } // 🔥 THIS IS THE MISSING BRACE THAT CRASHED THE PORTAL
 
         // 2. Handle Profile Picture vs. Initials Fallback
         if (data.profilePic && data.profilePic.trim() !== "") {
@@ -4300,6 +4306,7 @@ function renderProfile(data) {
             document.getElementById('cardInitials').style.display = 'none';
         } else {
             document.getElementById('cardProfilePic').style.display = 'none';
+            // Use the display variables here so the badge shows "EM" instead of "CL"
             let initFirst = displayFirst ? displayFirst.charAt(0).toUpperCase() : "E";
             let initLast = displayLast ? displayLast.charAt(0).toUpperCase() : "M";
             document.getElementById('cardInitials').innerText = initFirst + initLast;
@@ -4309,7 +4316,10 @@ function renderProfile(data) {
         // 3. Generate the O2O Partner Verification QR Code
         let verifyUrl = `https://www.asiaceo.club/weeklyconnection?verifyID=${data.memberId || data._id}`;
         let encodedUrl = encodeURIComponent(verifyUrl);
-        document.getElementById('cardQrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedUrl}`;
+        let qrCodeEl = document.getElementById('cardQrCode');
+        if (qrCodeEl) {
+            qrCodeEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedUrl}`;
+        }
     
         let previewEl = document.getElementById('profPicPreview');
         if (previewEl) {
@@ -4409,13 +4419,13 @@ function renderProfile(data) {
 
         let pwdEl = document.getElementById('profPassword'); if(pwdEl) pwdEl.value = ''; 
         document.getElementById('profileContent').style.display = 'block'; 
+        
     } catch(e) { 
         document.getElementById('profileLoading').style.display = 'none'; 
         document.getElementById('profileMainError').innerText = "UI Render Error: " + e.message; 
         document.getElementById('profileMainError').style.display = 'block'; 
     } 
 }
-
 
 function requestAccountDeletion() {
     // 1. Instantly pull the mobile browser to the top
