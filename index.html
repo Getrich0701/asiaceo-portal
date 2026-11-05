@@ -732,14 +732,15 @@ html, body {
     .omni-search-wrapper { max-width: 100% !important; margin-right: 0 !important; margin-bottom: 10px !important; }
     
    /* 🔥 FIX: Force buttons to maintain their shape and NOT shrink/clip text */
+    /* 🔥 FIX: Force buttons to maintain their shape and NOT clip or shrink */
     .sidebar-btn { 
         white-space: nowrap !important; 
         display: inline-flex !important; 
-        align-items: center;
-        justify-content: center;
+        align-items: center !important;
+        justify-content: center !important;
         padding: 8px 18px !important;
         min-width: max-content !important;
-        flex: 0 0 auto !important; /* 🔥 STOPS THE SHRINKING ("P") */
+        flex-shrink: 0 !important; /* 🔥 STOPS THE SHRINKING */
     }
 
     /* 🔥 FIX: Force Directory & Event filters to stack cleanly on mobile */
@@ -1665,7 +1666,20 @@ html, body {
     <option value="Zambia">Zambia</option>
     <option value="Zimbabwe">Zimbabwe</option>
 </select>
-<input type="text" id="company" placeholder="Search Company Name..."><select id="searchCompanySize"><option value="All">All Company Sizes</option><option value="Self-employed / Sole Proprietorship">Self-employed</option><option value="1-10">1–10 employees</option><option value="11-50">11–50 employees</option><option value="51-200">51–200 employees</option><option value="201-500">201–500 employees</option><option value="501-1000">501–1,000 employees</option><option value="1001-5000">1,001–5,000 employees</option><option value="5001-10000">5001–10,000 employees</option><option value="10000+">10,000+ employees</option></select><select id="title"><option value="">All Business Titles</option></select><div style="display:flex; gap:10px; width:100%;"><button onclick="document.getElementById('recommendationsSection').style.display='none'; performSearch();" class="btn-primary" style="flex:2;">Search Database</button><button onclick="clearFilters()" class="btn-secondary" style="flex:1;">Clear</button></div></div></div>
+<input type="text" id="company" placeholder="Search Company Name...">
+  <select id="searchCompanySize">
+    <option value="All">All Company Sizes</option>
+    <option value="Self-employed / Sole Proprietorship">Self-employed</option>
+    <option value="1-10">1–10 employees</option>
+    <option value="11-50">11–50 employees</option>
+    <option value="51-200">51–200 employees</option>
+    <option value="201-500">201–500 employees</option>
+    <option value="501-1000">501–1,000 employees</option>
+    <option value="1001-5000">1,001–5,000 employees</option>
+    <option value="5001-10000">5,001–10,000 employees</option>
+    <option value="10000+">10,000+ employees</option>
+</select>
+  <select id="title"><option value="">All Business Titles</option></select><div style="display:flex; gap:10px; width:100%;"><button onclick="document.getElementById('recommendationsSection').style.display='none'; performSearch();" class="btn-primary" style="flex:2;">Search Database</button><button onclick="clearFilters()" class="btn-secondary" style="flex:1;">Clear</button></div></div></div>
     <!-- 🔥 UI FIX: Search results are permanently positioned exactly between the two blocks! -->
     <div id="loading" style="display:none; font-size:0.9em; font-weight:600; color:var(--accent-gold); margin-bottom:15px; text-align:center; padding:20px;"></div>
     <div id="searchResultsArea" style="display:none; margin-bottom:25px;"><h3 class="section-title" id="resultsCountHeader">Search Results</h3><div id="cardContainer" class="card-grid"></div></div>
@@ -2241,7 +2255,19 @@ html, body {
               <div class="input-group"><label>What I Can Offer (Give)</label><input type="text" id="profOffer" placeholder="Your value-add to the network"></div>
 <div class="input-group"><label>Looking For (Get)</label><input type="text" id="profLooking" placeholder="What you need right now"></div>
               <div class="input-group"><label>Country</label><input type="text" id="profCountry"></div>
-              <div class="input-group"><label>Company Size</label><select id="profCompanySize"><option value="Self-employed / Sole Proprietorship">Self-employed / Sole Proprietorship</option><option value="1-10">1-10</option><option value="11-50">11-50</option><option value="51-200">51-200</option><option value="201-500">201-500</option><option value="501-1000">501-1000</option><option value="1001-5000">1001-5000</option><option value="5001-10000">5001-10000</option><option value="10000+">10000+</option></select></div>
+              <div class="input-group"><label>Company Size</label>
+              <select id="profCompanySize">
+    <option value="Self-employed / Sole Proprietorship">Self-employed / Sole Proprietorship</option>
+    <option value="1-10">1–10 employees</option>
+    <option value="11-50">11–50 employees</option>
+    <option value="51-200">51–200 employees</option>
+    <option value="201-500">201–500 employees</option>
+    <option value="501-1000">501–1,000 employees</option>
+    <option value="1001-5000">1,001–5,000 employees</option>
+    <option value="5001-10000">5,001–10,000 employees</option>
+    <option value="10000+">10,000+ employees</option>
+</select>
+              </div>
               <div class="input-group" style="grid-column:1/-1;"><label>Scheduling Link <span style="color:var(--accent-gold); font-size:0.85em; text-transform:none;">(Calendly, etc.)</span></label><input type="url" id="profCalendly" placeholder="https://calendly.com/your-link"></div>
               <div class="input-group" style="grid-column:1/-1;"><label>Update Password</label><input type="password" id="profPassword" placeholder="Leave blank to keep current password"></div>
               
@@ -3883,6 +3909,16 @@ function showProfileModal(itemStr) {
     let item = JSON.parse(unescape(itemStr));
     silentLogView('Profile', item._id || item.originalIndex, item.email || (item.rawData ? item.rawData[7] : ""));
     
+    // 🔥 NAME ENCODING FIX
+    let safeFirst = "Executive", safeLast = "";
+    try { safeFirst = decodeURIComponent(escape(item.firstName || '')); } catch(e) { safeFirst = item.firstName || ''; }
+    try { safeLast = decodeURIComponent(escape(item.lastName || '')); } catch(e) { safeLast = item.lastName || ''; }
+
+    // 🔥 EXCEL DATE SANITIZER
+    let cSize = item.companySize || "";
+    if(cSize === "10-Jan" || cSize === "1-Oct" || cSize === "Jan-10") cSize = "1-10";
+    if(cSize === "Nov-50" || cSize === "11-May") cSize = "11-50";
+
     const initials = item.company ? item.company.substring(0, 2).toUpperCase() : 'EX'; 
     const avatarHtml = item.profilePic ? `<img src="${item.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : initials;
     const badge = item.verified ? `<span class="verified-badge" style="color:var(--accent-gold); font-size:0.8em; margin-left:5px;">✔ VIP</span>` : ''; 
@@ -3892,12 +3928,15 @@ function showProfileModal(itemStr) {
         <div style="text-align:center; margin-bottom:20px;">
             <div class="avatar" style="width:80px; height:80px; margin:0 auto 15px auto; font-size:2em; border: 2px solid var(--accent-gold); overflow:hidden; padding:0;">${avatarHtml}</div>
             <h3 style="margin:0 0 5px 0; color:var(--text-light); display:flex; align-items:center; justify-content:center; gap:6px;">${item.company} ${badge}</h3>
-            <p style="margin:0; font-size:1.1em; font-weight:600;">${item.firstName} ${item.lastName}</p>
+            <p style="margin:0; font-size:1.1em; font-weight:600;">${safeFirst} ${safeLast}</p>
             <p style="margin:0; color:var(--secondary-slate);">${item.title} • ${item.country}</p>
         </div>
         <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:12px; padding:20px; margin-bottom:20px;">
             <p style="margin:0 0 5px 0; font-size:0.85em; color:var(--secondary-slate); text-transform:uppercase; letter-spacing: 1px;">Industry</p>
             <p style="margin:0 0 15px 0; color:var(--text-light); font-weight:500;">${item.industry} — ${item.expertise || 'Executive'}</p>
+            
+            <p style="margin:0 0 5px 0; font-size:0.85em; color:var(--accent-gold); text-transform:uppercase; letter-spacing: 1px;">Company Size</p>
+            <p style="margin:0 0 15px 0; color:var(--text-light); font-weight:500;">${cSize || 'Not specified'}</p>
             
             <p style="margin:0 0 5px 0; font-size:0.85em; color:var(--accent-gold); text-transform:uppercase; letter-spacing: 1px;">What They Offer (Give)</p>
             <p style="margin:0 0 15px 0; color:var(--text-light); font-weight:500;">${item.currentOffer || 'Not specified'}</p>
