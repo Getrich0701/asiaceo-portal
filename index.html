@@ -730,6 +730,29 @@ html, body {
 @media screen and (max-width: 1024px) {
     .top-header { flex-direction: column !important; padding: 15px !important; }
     .omni-search-wrapper { max-width: 100% !important; margin-right: 0 !important; margin-bottom: 10px !important; }
+    
+    /* 🔥 FIX: Allow nav buttons to wrap text so "Partner Hub" doesn't clip */
+    .sidebar-btn { 
+        white-space: normal !important; 
+        min-width: 110px !important; 
+        text-align: center; 
+        line-height: 1.2; 
+    }
+
+    /* 🔥 FIX: Force Directory & Event filters to stack cleanly on mobile */
+    .search-container > select, .search-container > input { 
+        flex: 1 1 100% !important; 
+        margin-bottom: 10px;
+    }
+    
+    /* 🔥 FIX: Stop Bounty Dropdown from covering the Post button */
+    #pulseBountySelect { 
+        width: 100% !important; 
+        margin-bottom: 10px; 
+    }
+    #btnSubmitPulse { 
+        width: 100% !important; 
+    }
 }
 
 .sidebar-dropdown-content a.active { background: rgba(212, 175, 55, 0.1); color: var(--accent-gold); font-weight: 600; border: 1px solid rgba(212, 175, 55, 0.3); }
@@ -2103,7 +2126,8 @@ html, body {
         <!-- Header -->
         <div class="vip-header-row">
             <h3 class="vip-brand-text">Asia CEO<br>Community</h3>
-            <div class="vip-status-badge">Global Member</div>
+            <!-- 🔥 BULLETPROOF FIX: Added ID here -->
+            <div id="vipCardBadge" class="vip-status-badge">Global Member</div>
         </div>
 
         <!-- Executive Details -->
@@ -2900,25 +2924,24 @@ function initializePortal() {
         }
     }
 
-    // 🔥 HIGH PRIORITY FIX: Session Survival & Auto Login Engine
+   // 🔥 HIGH PRIORITY FIX: Session Survival & Auto Login Engine (Bypass Password Check)
     let savedSession = null;
-    let savedPass = null;
-    
     try {
         savedSession = localStorage.getItem('cardsUserEmail') || localStorage.getItem('asiaCeoSession');
-        savedPass = localStorage.getItem('cardsUserPass');
     } catch(e) { console.warn("Storage restricted"); }
 
     if (savedSession) { 
+        loggedInUser = savedSession; // Instantly lock in identity
+        
         // Instantly hide the login screen so the user never sees it
         document.getElementById('loginView').style.display = 'none';
         document.getElementById('authContainer').style.display = 'none';
-
-        document.getElementById('userEmail').value = savedSession;
-        if (savedPass) document.getElementById('userPassword').value = savedPass;
-        document.getElementById('rememberMe').checked = true;
+        document.getElementById('dashboardView').style.display = 'flex';
+        document.getElementById('aiConciergeBtnDesktop').style.display = 'flex'; 
+        document.getElementById('aiConciergeBtnMobile').style.display = 'flex';
         
-        attemptLogin(); 
+        // 🔥 Trigger silent data refresh instead of a full password login
+        refreshDashboard(); 
     }
 
     // 🔥 ULTIMATE SPLASH SCREEN FAILSAFE 🔥
@@ -2930,7 +2953,6 @@ function initializePortal() {
         }
     }, 5000); 
 }
-
 // 1. Run instantly the exact millisecond the script is read
 initializePortal();
 // 2. Run again 0.5s later as a backup
@@ -4313,7 +4335,8 @@ function renderProfile(data) {
             document.getElementById('cardInitials').style.display = 'flex';
         }
 
-        // 3. Generate the O2O Partner Verification QR Code
+      // 3. Generate the O2O Partner Verification QR Code
+        // 🔥 FIX: Restored the proper Partner Gateway URL instead of the dense vCard
         let verifyUrl = `https://www.asiaceo.club/weeklyconnection?verifyID=${data.memberId || data._id}`;
         let encodedUrl = encodeURIComponent(verifyUrl);
         let qrCodeEl = document.getElementById('cardQrCode');
@@ -4558,8 +4581,57 @@ const inqBody = document.getElementById('container-deals-inquiries');
     }
 
  const talBody = document.getElementById('container-talent-all'); if(talBody) { talBody.innerHTML = ''; const combinedHistory = (data.talentHistory || []).concat(data.boardHistory || []); if (combinedHistory.length > 0) { combinedHistory.forEach(t => { const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${t[2]}</div><div class="list-card-status" style="background:transparent; border:1px solid var(--border-color); color:var(--secondary-slate);">${t[3]}</div></div><div class="list-card-body"><p><strong>Type:</strong> ${t[1]}</p><p><strong>Date:</strong> ${t[0]}</p></div>`; talBody.appendChild(card); }); } else { talBody.innerHTML = `<div class="empty-state">No talent or board inquiries made yet.</div>`; } } const procPostedBody = document.getElementById('container-procure-posted'); if(procPostedBody) { procPostedBody.innerHTML = ''; let allProc = (data.postedProcurements ? (data.postedProcurements.pending || []).concat(data.postedProcurements.approved || []) : []); if (allProc.length > 0) { allProc.forEach(p => { const isAppr = (p[3] || '').toLowerCase() === 'approved'; const statColor = isAppr ? '#10B981' : '#F59E0B'; const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${p[1]}</div><div class="list-card-status" style="background:transparent; color:${statColor}; border: 1px solid ${statColor};">${p[3]}</div></div><div class="list-card-body"><p><strong>Category:</strong> ${p[2]}</p><p><strong>Date Posted:</strong> ${p[0]}</p></div>`; procPostedBody.appendChild(card); }); } else { procPostedBody.innerHTML = `<div class="empty-state">No service requests posted yet.</div>`; } } const procInqBody = document.getElementById('container-procure-inquiries'); if(procInqBody) { procInqBody.innerHTML = ''; if (data.procurementHistory && data.procurementHistory.length > 0) { data.procurementHistory.forEach(iq => { const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${iq[2]}</div><div class="list-card-status" style="background:transparent; border:1px solid var(--border-color); color:var(--secondary-slate);">${iq[3]}</div></div><div class="list-card-body"><p><strong>Category:</strong> ${iq[1]}</p><p><strong>Date Pitched:</strong> ${iq[0]}</p></div>`; procInqBody.appendChild(card); }); } else { procInqBody.innerHTML = `<div class="empty-state">No service pitches sent yet.</div>`; } } } catch(e) { document.getElementById('historyContent').style.display = 'none'; document.getElementById('historyMainError').innerText = "UI Render Error: " + e.message; document.getElementById('historyMainError').style.display = 'block'; } }
-  function refreshDashboard() { const btn = document.getElementById('btnRefreshNative'); btn.innerHTML = "<span>⏳</span>"; btn.disabled = true; google.script.run.withSuccessHandler(res => { if(res && res.success) { document.getElementById('creditBalance').innerText = res.credits; if (res.recommendations && res.recommendations.length > 0) { document.getElementById('recCards').innerHTML = ''; setTimeout(() => { renderCards(res.recommendations.slice(0, 3), 'recCards', false); }, 200); } } silentHistoryCheck(); const activeTabs = ['search', 'history', 'bookmarks', 'profile', 'postDeal', 'dealBoard', 'talentBoard', 'postJob', 'postCandidate', 'boardBoard', 'postBoardRole', 'postBoardCandidate', 'procurementBoard', 'postProcurement', 'promote', 'manageEvents', 'invite', 'guestList', 'referrals', 'billing', 'messages', 'admin']; let activeTab = 'search'; activeTabs.forEach(t => { const container = document.getElementById(t+'TabContainer'); if(container && container.style.display === 'block') activeTab = t; }); if(activeTab === 'history') loadFullHistory(); else if(activeTab === 'profile') loadMyProfile(); else if(activeTab === 'bookmarks') loadBookmarks(); else if(activeTab === 'dealBoard') loadDealBoardData(); else if(activeTab === 'talentBoard') loadTalentBoard(); else if(activeTab === 'boardBoard') loadBoardBoard(); else if(activeTab === 'procurementBoard') loadProcurementBoard(); else if(activeTab === 'referrals') loadReferrals(); else if(activeTab === 'manageEvents') loadManageEvents(); else if(activeTab === 'guestList') populateGuestListDropdown(); else if(activeTab === 'search' && document.getElementById('searchResultsArea').style.display === 'block') performSearch(); else if(activeTab === 'invite' && document.getElementById('invSearchResultsArea').style.display === 'block') performInviteSearch(); else if(activeTab === 'messages') { if (activeChatEmail !== "") openChat(activeChatEmail, activeChatName); else loadInbox(); } else if(activeTab === 'admin') loadAdminAnalytics(); setTimeout(() => { btn.innerHTML = "<span>🔄</span>"; btn.disabled = false; }, 1000); }).withFailureHandler(err => { alert("Network Timeout. Please try refreshing again."); btn.innerHTML = "<span>🔄</span>"; btn.disabled = false; }).getUserProfile(loggedInUser, Date.now()); }
-  function submitEvent() { const err = document.getElementById('eventError'); err.style.display = 'none'; const msg = document.getElementById('eventMsg'); msg.style.display = 'none'; const data = { title: document.getElementById('evtTitle').value.trim(), date: document.getElementById('evtDate').value, time: document.getElementById('evtTime').value.trim(), location: document.getElementById('evtLocation').value.trim(), description: document.getElementById('evtDesc').value.trim() }; if(!data.title || !data.date || !data.time || !data.location) { err.innerText = "Please fill in all required fields."; err.style.display = 'block'; return; } document.getElementById('btnSubmitEvent').disabled = true; document.getElementById('eventLoading').style.display = 'block'; google.script.run.withSuccessHandler(res => { document.getElementById('btnSubmitEvent').disabled = false; document.getElementById('eventLoading').style.display = 'none'; if(res.success) { msg.innerText = "Event successfully created! You can now access the Invite Guests tab."; msg.style.display = 'block'; ['evtTitle', 'evtDate', 'evtTime', 'evtLocation', 'evtDesc'].forEach(id => document.getElementById(id).value = ''); currentUserEvents = res.events; updateEventDropdowns(); } else { err.innerText = res.error; err.style.display = 'block'; } }).createEvent(data, loggedInUser); }
+  function refreshDashboard() { 
+      const btn = document.getElementById('btnRefreshNative'); 
+      if(btn) { btn.innerHTML = "<span>⏳</span>"; btn.disabled = true; }
+      
+      google.script.run.withSuccessHandler(res => { 
+          if(res && res.success) { 
+              document.getElementById('creditBalance').innerText = res.credits; 
+              
+              // 🔥 CRITICAL FIX: Restore Elite Tabs on Auto-Login
+              isUserPartner = res.isPartner; 
+              if(res.isAdmin) document.getElementById('tabAdmin').style.display = 'flex';
+              if(res.isPartner) document.getElementById('tabReferrals').style.display = 'flex';
+              
+              if (res.recommendations && res.recommendations.length > 0) { 
+                  document.getElementById('recCards').innerHTML = ''; 
+                  setTimeout(() => { renderCards(res.recommendations.slice(0, 3), 'recCards', false); }, 200); 
+              } 
+          } 
+          silentHistoryCheck(); 
+          const activeTabs = ['search', 'history', 'bookmarks', 'profile', 'postDeal', 'dealBoard', 'talentBoard', 'postJob', 'postCandidate', 'boardBoard', 'postBoardRole', 'postBoardCandidate', 'procurementBoard', 'postProcurement', 'promote', 'manageEvents', 'invite', 'guestList', 'referrals', 'billing', 'messages', 'admin']; 
+          let activeTab = 'search'; 
+          activeTabs.forEach(t => { 
+              const container = document.getElementById(t+'TabContainer'); 
+              if(container && container.style.display === 'block') activeTab = t; 
+          }); 
+          
+          if(activeTab === 'history') loadFullHistory(); 
+          else if(activeTab === 'profile') loadMyProfile(); 
+          else if(activeTab === 'bookmarks') loadBookmarks(); 
+          else if(activeTab === 'dealBoard') loadDealBoardData(); 
+          else if(activeTab === 'talentBoard') loadTalentBoard(); 
+          else if(activeTab === 'boardBoard') loadBoardBoard(); 
+          else if(activeTab === 'procurementBoard') loadProcurementBoard(); 
+          else if(activeTab === 'referrals') loadReferrals(); 
+          else if(activeTab === 'manageEvents') loadManageEvents(); 
+          else if(activeTab === 'guestList') populateGuestListDropdown(); 
+          else if(activeTab === 'search' && document.getElementById('searchResultsArea').style.display === 'block') performSearch(); 
+          else if(activeTab === 'invite' && document.getElementById('invSearchResultsArea').style.display === 'block') performInviteSearch(); 
+          else if(activeTab === 'messages') { if (activeChatEmail !== "") openChat(activeChatEmail, activeChatName); else loadInbox(); } 
+          else if(activeTab === 'admin') loadAdminAnalytics(); 
+          
+          if(btn) {
+              setTimeout(() => { btn.innerHTML = "<span>🔄</span>"; btn.disabled = false; }, 1000); 
+          }
+      }).withFailureHandler(err => { 
+          alert("Network Timeout. Please try refreshing again."); 
+          if(btn) { btn.innerHTML = "<span>🔄</span>"; btn.disabled = false; }
+      }).getUserProfile(loggedInUser, Date.now()); 
+  }
+    
+    function submitEvent() { const err = document.getElementById('eventError'); err.style.display = 'none'; const msg = document.getElementById('eventMsg'); msg.style.display = 'none'; const data = { title: document.getElementById('evtTitle').value.trim(), date: document.getElementById('evtDate').value, time: document.getElementById('evtTime').value.trim(), location: document.getElementById('evtLocation').value.trim(), description: document.getElementById('evtDesc').value.trim() }; if(!data.title || !data.date || !data.time || !data.location) { err.innerText = "Please fill in all required fields."; err.style.display = 'block'; return; } document.getElementById('btnSubmitEvent').disabled = true; document.getElementById('eventLoading').style.display = 'block'; google.script.run.withSuccessHandler(res => { document.getElementById('btnSubmitEvent').disabled = false; document.getElementById('eventLoading').style.display = 'none'; if(res.success) { msg.innerText = "Event successfully created! You can now access the Invite Guests tab."; msg.style.display = 'block'; ['evtTitle', 'evtDate', 'evtTime', 'evtLocation', 'evtDesc'].forEach(id => document.getElementById(id).value = ''); currentUserEvents = res.events; updateEventDropdowns(); } else { err.innerText = res.error; err.style.display = 'block'; } }).createEvent(data, loggedInUser); }
   function updateEventDropdowns() { const select = document.getElementById('globalEventSelect'); if(select) { select.innerHTML = '<option value="">-- Select Your Event --</option>'; currentUserEvents.forEach(evt => { select.appendChild(new Option(`${evt.title} (${evt.date})`, evt.id)); }); } }
 
   
