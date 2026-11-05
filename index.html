@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' https://*.asiaceo.club https://asiaceo.club https://*.wix.com https://*.editorx.io;">
+  
 <script>
     !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
     posthog.init('phc_Bxju4onNRgfuJbpF53wDgovtrfzYV6znshBCSrSftvur', {api_host: 'https://app.posthog.com'})
@@ -731,7 +731,7 @@ html, body {
     .top-header { flex-direction: column !important; padding: 15px !important; }
     .omni-search-wrapper { max-width: 100% !important; margin-right: 0 !important; margin-bottom: 10px !important; }
     
-    /* 🔥 FIX: Force buttons to maintain their shape and NOT clip text */
+   /* 🔥 FIX: Force buttons to maintain their shape and NOT shrink/clip text */
     .sidebar-btn { 
         white-space: nowrap !important; 
         display: inline-flex !important; 
@@ -739,6 +739,7 @@ html, body {
         justify-content: center;
         padding: 8px 18px !important;
         min-width: max-content !important;
+        flex: 0 0 auto !important; /* 🔥 STOPS THE SHRINKING ("P") */
     }
 
     /* 🔥 FIX: Force Directory & Event filters to stack cleanly on mobile */
@@ -1736,8 +1737,9 @@ html, body {
         <textarea id="dealRawPitch" rows="6" placeholder="Paste your pitch deck text, cap table, or data room notes here. Investors must sign your NDA to read this."></textarea>
     </div>
     
+
     <!-- 🔥 UPDATED BUTTON TEXT -->
-    <button onclick="submitDealForm()" class="btn-primary" id="btnSubmitDeal">Submit Deal (+50 Points)</button>
+    <button onclick="submitDealForm()" class="btn-primary" id="btnSubmitDeal">Submit Deal (1 Credit) • +50 Pts</button>
     <div id="dealLoading" class="loader" style="margin-top:15px;">Submitting...</div>
 </div>
             
