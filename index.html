@@ -2298,7 +2298,7 @@ html, body {
       
 <div id="referralsTabContainer" style="display:none;">
     <div class="container">
-        <h2>Partner Hub</h2>
+        <h2>Partner Portal</h2>
         
         <!-- 🔥 NEW: Partner VIP Scanner Shortcut -->
         <div style="background:rgba(16, 185, 129, 0.1); border:1px solid #10B981; padding:20px; border-radius:12px; text-align:center; margin-bottom:20px;">
@@ -2310,12 +2310,15 @@ html, body {
         <div class="profile-grid">
             <div style="background:var(--primary-navy); padding:25px; border-radius:12px; text-align:center; border:1px solid var(--border-color);">
                 <strong>Total Paid</strong>
-                <div id="refTotalPaid" style="font-size:2.5em; font-weight:300; color:var(--text-light); margin-top:5px; font-family:'Playfair Display', serif;">$0</div>
+                <!-- 🔥 FIX: Default to -- instead of $0 -->
+                <div id="refTotalPaid" style="font-size:2.5em; font-weight:300; color:var(--text-light); margin-top:5px; font-family:'Playfair Display', serif;">--</div>
             </div>
             <div style="background:rgba(239, 68, 68, 0.1); padding:25px; border-radius:12px; text-align:center; border:1px solid #EF4444;">
                 <strong>Pending Payout</strong>
-                <div id="refPendingPaid" style="font-size:2.5em; font-weight:300; color:#EF4444; margin-top:5px; font-family:'Playfair Display', serif;">$0</div>
-                <button id="btnWithdrawAction" class="btn-primary" onclick="openWithdrawModal()" style="background:#EF4444; color:#fff; margin-top:15px; padding:8px; box-shadow:none;">Withdraw Funds</button>
+                <!-- 🔥 FIX: Default to -- instead of $0 -->
+                <div id="refPendingPaid" style="font-size:2.5em; font-weight:300; color:#EF4444; margin-top:5px; font-family:'Playfair Display', serif;">--</div>
+                <!-- 🔥 FIX: Disable the button by default until data loads -->
+                <button id="btnWithdrawAction" class="btn-primary" onclick="openWithdrawModal()" style="background:#EF4444; color:#fff; margin-top:15px; padding:8px; box-shadow:none; opacity:0.5; cursor:not-allowed;" disabled>Withdraw Funds</button>
             </div>
         </div>
     </div>
