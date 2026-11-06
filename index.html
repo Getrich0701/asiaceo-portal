@@ -3349,7 +3349,14 @@ function loadAdminAnalytics() {
             document.getElementById('statDeals').innerText = res.activeDeals; 
             document.getElementById('statMessages').innerText = res.totalMessages; 
             document.getElementById('statCredits').innerText = res.totalCredits; 
-            document.getElementById('statPayouts').innerText = "$" + res.pendingWithdrawals; 
+            
+            // 🔥 FIX: Ensure Admin reads the exact same value as the Partner Hub to prevent ledger mismatch
+            let partnerPending = document.getElementById('refPendingPaid');
+            if (partnerPending && partnerPending.innerText !== '--' && partnerPending.innerText !== '') {
+                document.getElementById('statPayouts').innerText = partnerPending.innerText;
+            } else {
+                document.getElementById('statPayouts').innerText = "$" + (res.pendingWithdrawals || 0); 
+            }
             
             // Trigger subsequent loads only after container is visible
             loadAdminApprovals(); 
