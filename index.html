@@ -3340,36 +3340,34 @@ function loadAdminAnalytics() {
     
     google.script.run.withSuccessHandler(res => { 
         document.getElementById('adminLoading').style.display = 'none'; 
-        
-        // 🔥 HIGH PRIORITY FIX: Explicitly unhide the admin content container upon response
         document.getElementById('adminContent').style.display = 'block'; 
 
         if (res && res.success) { 
-            document.getElementById('statMembers').innerText = res.totalMembers; 
-            document.getElementById('statDeals').innerText = res.activeDeals; 
-            document.getElementById('statMessages').innerText = res.totalMessages; 
-            document.getElementById('statCredits').innerText = res.totalCredits; 
+            // 🔥 FIX: Safe assignment prevents the script from crashing if an HTML tile is missing
+            let safeSet = (id, val) => { let el = document.getElementById(id); if (el) el.innerText = val; };
             
-            // 🔥 FIX: Ensure Admin reads the exact same value as the Partner Hub to prevent ledger mismatch
+            safeSet('statMembers', res.totalMembers || 0); 
+            safeSet('statDeals', res.activeDeals || 0); 
+            safeSet('statMessages', res.totalMessages || 0); // Fails gracefully without crashing
+            safeSet('statCredits', res.totalCredits || 0); 
+            
+            // 🔥 FIX: Sync the Ledger
             let partnerPending = document.getElementById('refPendingPaid');
             if (partnerPending && partnerPending.innerText !== '--' && partnerPending.innerText !== '') {
-                document.getElementById('statPayouts').innerText = partnerPending.innerText;
+                safeSet('statPayouts', partnerPending.innerText);
             } else {
-                document.getElementById('statPayouts').innerText = "$" + (res.pendingWithdrawals || 0); 
+                safeSet('statPayouts', "$" + (res.pendingWithdrawals || 0)); 
             }
             
-            // Trigger subsequent loads only after container is visible
             loadAdminApprovals(); 
             loadAdminWarmIntros(); 
         } else { 
             alert("Admin Warning: Could not fetch initial analytics. " + (res.error || "")); 
-            // Fallback load anyway so the admin can at least see the approvals queue
             loadAdminApprovals(); 
             loadAdminWarmIntros(); 
         } 
     }).withFailureHandler(err => {
         document.getElementById('adminLoading').style.display = 'none';
-        // Even if it fails, unhide the container so the UI isn't completely frozen
         document.getElementById('adminContent').style.display = 'block'; 
         alert("Admin Backend Error: " + err.message);
     }).getAdminAnalytics(loggedInUser); 
@@ -3482,8 +3480,8 @@ function handleLoginResponse(res) {
         currentUserEvents = res.events || []; 
         updateEventDropdowns(); 
         
-        // 🔥 FIX: Use 'block' so the links flow perfectly inside the "More" dropdown
-        document.getElementById('tabReferrals').style.display = res.isPartner ? 'block' : 'none'; 
+        // 🔥 FIX: Ensure Admins (Staff) ALSO get access to the Partner Hub tab inside the 'More' dropdown
+        document.getElementById('tabReferrals').style.display = (res.isPartner || res.isAdmin) ? 'block' : 'none'; 
         document.getElementById('tabAdmin').style.display = res.isAdmin ? 'block' : 'none'; 
         
         document.getElementById('loginView').style.display = 'none';
@@ -4703,7 +4701,7 @@ const inqBody = document.getElementById('container-deals-inquiries');
 
  const talBody = document.getElementById('container-talent-all'); if(talBody) { talBody.innerHTML = ''; const combinedHistory = (data.talentHistory || []).concat(data.boardHistory || []); if (combinedHistory.length > 0) { combinedHistory.forEach(t => { const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${t[2]}</div><div class="list-card-status" style="background:transparent; border:1px solid var(--border-color); color:var(--secondary-slate);">${t[3]}</div></div><div class="list-card-body"><p><strong>Type:</strong> ${t[1]}</p><p><strong>Date:</strong> ${t[0]}</p></div>`; talBody.appendChild(card); }); } else { talBody.innerHTML = `<div class="empty-state">No talent or board inquiries made yet.</div>`; } } const procPostedBody = document.getElementById('container-procure-posted'); if(procPostedBody) { procPostedBody.innerHTML = ''; let allProc = (data.postedProcurements ? (data.postedProcurements.pending || []).concat(data.postedProcurements.approved || []) : []); if (allProc.length > 0) { allProc.forEach(p => { const isAppr = (p[3] || '').toLowerCase() === 'approved'; const statColor = isAppr ? '#10B981' : '#F59E0B'; const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${p[1]}</div><div class="list-card-status" style="background:transparent; color:${statColor}; border: 1px solid ${statColor};">${p[3]}</div></div><div class="list-card-body"><p><strong>Category:</strong> ${p[2]}</p><p><strong>Date Posted:</strong> ${p[0]}</p></div>`; procPostedBody.appendChild(card); }); } else { procPostedBody.innerHTML = `<div class="empty-state">No service requests posted yet.</div>`; } } const procInqBody = document.getElementById('container-procure-inquiries'); if(procInqBody) { procInqBody.innerHTML = ''; if (data.procurementHistory && data.procurementHistory.length > 0) { data.procurementHistory.forEach(iq => { const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${iq[2]}</div><div class="list-card-status" style="background:transparent; border:1px solid var(--border-color); color:var(--secondary-slate);">${iq[3]}</div></div><div class="list-card-body"><p><strong>Category:</strong> ${iq[1]}</p><p><strong>Date Pitched:</strong> ${iq[0]}</p></div>`; procInqBody.appendChild(card); }); } else { procInqBody.innerHTML = `<div class="empty-state">No service pitches sent yet.</div>`; } } } catch(e) { document.getElementById('historyContent').style.display = 'none'; document.getElementById('historyMainError').innerText = "UI Render Error: " + e.message; document.getElementById('historyMainError').style.display = 'block'; } }
 
-  function refreshDashboard() { 
+ function refreshDashboard() { 
     const btn = document.getElementById('btnRefreshNative'); 
     if(btn) { btn.innerHTML = "<span>⏳</span>"; btn.disabled = true; }
     
@@ -4711,10 +4709,14 @@ const inqBody = document.getElementById('container-deals-inquiries');
         if(res && res.success) { 
             document.getElementById('creditBalance').innerText = res.credits; 
             
-            // 🔥 FIX: Restore Elite Tabs on Auto-Login using 'block' for the dropdown links
+            // 🔥 FIX: Restore Elite Tabs and ensure Admins get master access to Partner Hub
             isUserPartner = res.isPartner; 
-            if(res.isAdmin) document.getElementById('tabAdmin').style.display = 'block';
-            if(res.isPartner) document.getElementById('tabReferrals').style.display = 'block';
+            if(res.isAdmin) {
+                document.getElementById('tabAdmin').style.display = 'block';
+                document.getElementById('tabReferrals').style.display = 'block'; // Admins see everything
+            } else if(res.isPartner) {
+                document.getElementById('tabReferrals').style.display = 'block';
+            }
             
             if (res.recommendations && res.recommendations.length > 0) { 
                 document.getElementById('recCards').innerHTML = ''; 
