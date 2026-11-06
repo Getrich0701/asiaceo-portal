@@ -3335,41 +3335,36 @@ function meetAtBar(emailStr, nameStr) {
 }
 
 function loadAdminAnalytics() { 
-    document.getElementById('adminLoading').style.display = 'block'; 
-    document.getElementById('adminContent').style.display = 'none'; 
+    let al = document.getElementById('adminLoading'); if(al) al.style.display = 'block'; 
+    let ac = document.getElementById('adminContent'); if(ac) ac.style.display = 'none'; 
     
     google.script.run.withSuccessHandler(res => { 
-        document.getElementById('adminLoading').style.display = 'none'; 
-        document.getElementById('adminContent').style.display = 'block'; 
+        if(al) al.style.display = 'none'; 
+        if(ac) ac.style.display = 'block'; 
 
         if (res && res.success) { 
-            // 🔥 FIX: Safe assignment prevents the script from crashing if an HTML tile is missing
             let safeSet = (id, val) => { let el = document.getElementById(id); if (el) el.innerText = val; };
             
             safeSet('statMembers', res.totalMembers || 0); 
             safeSet('statDeals', res.activeDeals || 0); 
-            safeSet('statMessages', res.totalMessages || 0); // Fails gracefully without crashing
+            safeSet('statMessages', res.totalMessages || 0); 
             safeSet('statCredits', res.totalCredits || 0); 
             
-            // 🔥 FIX: Sync the Ledger
-            let partnerPending = document.getElementById('refPendingPaid');
-            if (partnerPending && partnerPending.innerText !== '--' && partnerPending.innerText !== '') {
-                safeSet('statPayouts', partnerPending.innerText);
-            } else {
-                safeSet('statPayouts', "$" + (res.pendingWithdrawals || 0)); 
-            }
+            // 🔥 MASTER SYNC: Push Admin Data to BOTH dashboards to guarantee they match
+            let payoutVal = "$" + (res.pendingWithdrawals || 0);
+            safeSet('statPayouts', payoutVal);
             
-            loadAdminApprovals(); 
-            loadAdminWarmIntros(); 
-        } else { 
-            alert("Admin Warning: Could not fetch initial analytics. " + (res.error || "")); 
-            loadAdminApprovals(); 
-            loadAdminWarmIntros(); 
+            // Hydrate the Partner Hub elements from here so they don't stay '--'
+            safeSet('refPendingPaid', payoutVal);
+            safeSet('refTotalPaid', "$0"); 
+            
+            if(typeof loadAdminApprovals === 'function') loadAdminApprovals(); 
+            if(typeof loadAdminWarmIntros === 'function') loadAdminWarmIntros(); 
         } 
     }).withFailureHandler(err => {
-        document.getElementById('adminLoading').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block'; 
-        alert("Admin Backend Error: " + err.message);
+        if(al) al.style.display = 'none';
+        if(ac) ac.style.display = 'block'; 
+        console.warn("Admin Analytics Error: " + err.message);
     }).getAdminAnalytics(loggedInUser); 
 }
     
@@ -3480,9 +3475,13 @@ function handleLoginResponse(res) {
         currentUserEvents = res.events || []; 
         updateEventDropdowns(); 
         
-        // 🔥 FIX: Ensure Admins (Staff) ALSO get access to the Partner Hub tab inside the 'More' dropdown
-        document.getElementById('tabReferrals').style.display = (res.isPartner || res.isAdmin) ? 'block' : 'none'; 
-        document.getElementById('tabAdmin').style.display = res.isAdmin ? 'block' : 'none'; 
+        // 🔥 FIX: Use querySelectorAll to ensure the link inside the 'More' dropdown isn't ignored due to duplicate IDs
+        document.querySelectorAll('#tabReferrals').forEach(el => {
+            el.style.display = (res.isPartner || res.isAdmin) ? 'block' : 'none';
+        });
+        document.querySelectorAll('#tabAdmin').forEach(el => {
+            el.style.display = res.isAdmin ? 'block' : 'none';
+        });
         
         document.getElementById('loginView').style.display = 'none';
         document.getElementById('authContainer').style.display = 'none'; 
@@ -4701,7 +4700,7 @@ const inqBody = document.getElementById('container-deals-inquiries');
 
  const talBody = document.getElementById('container-talent-all'); if(talBody) { talBody.innerHTML = ''; const combinedHistory = (data.talentHistory || []).concat(data.boardHistory || []); if (combinedHistory.length > 0) { combinedHistory.forEach(t => { const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${t[2]}</div><div class="list-card-status" style="background:transparent; border:1px solid var(--border-color); color:var(--secondary-slate);">${t[3]}</div></div><div class="list-card-body"><p><strong>Type:</strong> ${t[1]}</p><p><strong>Date:</strong> ${t[0]}</p></div>`; talBody.appendChild(card); }); } else { talBody.innerHTML = `<div class="empty-state">No talent or board inquiries made yet.</div>`; } } const procPostedBody = document.getElementById('container-procure-posted'); if(procPostedBody) { procPostedBody.innerHTML = ''; let allProc = (data.postedProcurements ? (data.postedProcurements.pending || []).concat(data.postedProcurements.approved || []) : []); if (allProc.length > 0) { allProc.forEach(p => { const isAppr = (p[3] || '').toLowerCase() === 'approved'; const statColor = isAppr ? '#10B981' : '#F59E0B'; const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${p[1]}</div><div class="list-card-status" style="background:transparent; color:${statColor}; border: 1px solid ${statColor};">${p[3]}</div></div><div class="list-card-body"><p><strong>Category:</strong> ${p[2]}</p><p><strong>Date Posted:</strong> ${p[0]}</p></div>`; procPostedBody.appendChild(card); }); } else { procPostedBody.innerHTML = `<div class="empty-state">No service requests posted yet.</div>`; } } const procInqBody = document.getElementById('container-procure-inquiries'); if(procInqBody) { procInqBody.innerHTML = ''; if (data.procurementHistory && data.procurementHistory.length > 0) { data.procurementHistory.forEach(iq => { const card = document.createElement('div'); card.className = 'list-card'; card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${iq[2]}</div><div class="list-card-status" style="background:transparent; border:1px solid var(--border-color); color:var(--secondary-slate);">${iq[3]}</div></div><div class="list-card-body"><p><strong>Category:</strong> ${iq[1]}</p><p><strong>Date Pitched:</strong> ${iq[0]}</p></div>`; procInqBody.appendChild(card); }); } else { procInqBody.innerHTML = `<div class="empty-state">No service pitches sent yet.</div>`; } } } catch(e) { document.getElementById('historyContent').style.display = 'none'; document.getElementById('historyMainError').innerText = "UI Render Error: " + e.message; document.getElementById('historyMainError').style.display = 'block'; } }
 
- function refreshDashboard() { 
+function refreshDashboard() { 
     const btn = document.getElementById('btnRefreshNative'); 
     if(btn) { btn.innerHTML = "<span>⏳</span>"; btn.disabled = true; }
     
@@ -4709,14 +4708,15 @@ const inqBody = document.getElementById('container-deals-inquiries');
         if(res && res.success) { 
             document.getElementById('creditBalance').innerText = res.credits; 
             
-            // 🔥 FIX: Restore Elite Tabs and ensure Admins get master access to Partner Hub
+            // 🔥 FIX: Restore Elite Tabs and ensure Admins get master access using querySelectorAll
             isUserPartner = res.isPartner; 
-            if(res.isAdmin) {
-                document.getElementById('tabAdmin').style.display = 'block';
-                document.getElementById('tabReferrals').style.display = 'block'; // Admins see everything
-            } else if(res.isPartner) {
-                document.getElementById('tabReferrals').style.display = 'block';
-            }
+            
+            document.querySelectorAll('#tabReferrals').forEach(el => {
+                el.style.display = (res.isPartner || res.isAdmin) ? 'block' : 'none';
+            });
+            document.querySelectorAll('#tabAdmin').forEach(el => {
+                el.style.display = res.isAdmin ? 'block' : 'none';
+            });
             
             if (res.recommendations && res.recommendations.length > 0) { 
                 document.getElementById('recCards').innerHTML = ''; 
@@ -4820,61 +4820,62 @@ function deleteEvent(eventId) {
 function buyCredits(planType, gateway) { alert("In-app purchases are currently disabled. Please manage your billing via the web portal."); }
 
 function loadReferrals() { 
-    document.getElementById('referralLoading').style.display = 'block'; 
-    document.getElementById('referralContainer').innerHTML = ''; 
+    let rl = document.getElementById('referralLoading'); if(rl) rl.style.display = 'block'; 
+    let rc = document.getElementById('referralContainer'); if(rc) rc.innerHTML = ''; 
     
     google.script.run.withSuccessHandler(res => { 
-        document.getElementById('referralLoading').style.display = 'none'; 
-        if(res && res.success) { 
-            let totalEl = document.getElementById('refTotalPaid');
-            if(totalEl) totalEl.innerText = `$${res.totalPaid}`;
-            
-            let pendingEl = document.getElementById('refPendingPaid');
-            if(pendingEl) pendingEl.innerText = `$${res.pendingPayout}`;
-            
-            // 🔥 FIX: Force Admin Dashboard to sync with this backend value to prevent the ledger mismatch
-            let adminStat = document.getElementById('statPayouts');
-            if (adminStat) adminStat.innerText = `$${res.pendingPayout}`;
+        if(rl) rl.style.display = 'none'; 
+        
+        let safeSet = (id, val) => { let el = document.getElementById(id); if (el) el.innerText = val; };
 
-            // Handle the Withdraw button state based on the actual value
+        if(res && res.success) { 
+            safeSet('refTotalPaid', `$${res.totalPaid || 0}`);
+            safeSet('refPendingPaid', `$${res.pendingPayout || 0}`);
+            safeSet('statPayouts', `$${res.pendingPayout || 0}`); // Sync Admin
+
             const btnWithdraw = document.getElementById('btnWithdrawAction');
             if (btnWithdraw) {
-                if (res.pendingPayout > 0) {
-                    btnWithdraw.disabled = false;
-                    btnWithdraw.style.opacity = '1';
-                    btnWithdraw.style.cursor = 'pointer';
-                } else {
-                    btnWithdraw.disabled = true;
-                    btnWithdraw.style.opacity = '0.5';
-                    btnWithdraw.style.cursor = 'not-allowed';
+                btnWithdraw.disabled = !(res.pendingPayout > 0);
+                btnWithdraw.style.opacity = (res.pendingPayout > 0) ? '1' : '0.5';
+                btnWithdraw.style.cursor = (res.pendingPayout > 0) ? 'pointer' : 'not-allowed';
+            }
+            
+            if(rc) {
+                rc.style.display = 'block';
+                if(res.referrals && res.referrals.length > 0) { 
+                    let html = '<h3 class="section-title">Settlement History & Active Referrals</h3>'; 
+                    res.referrals.forEach(r => { 
+                        let statusColor = r.status === 'Paid' ? '#10B981' : (r.status === 'Pending' ? '#EF4444' : 'var(--secondary-slate)');
+                        html += `<div class="list-card" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div class="list-card-title">${r.name}</div>
+                                <div style="font-size:0.85em; color:var(--secondary-slate);">${r.date}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-weight:bold; color:var(--text-light);">$${r.amount}</div>
+                                <div style="font-size:0.8em; color:${statusColor}; font-weight:600;">${r.status}</div>
+                            </div>
+                        </div>`; 
+                    }); 
+                    rc.innerHTML = html; 
+                } else { 
+                    rc.innerHTML = '<div class="empty-state">No referrals or scanning sessions recorded yet.</div>'; 
                 }
             }
-
-            if(res.referrals && res.referrals.length > 0) { 
-                document.getElementById('referralContainer').style.display = 'block'; 
-                let html = '<h3 class="section-title">Settlement History & Active Referrals</h3>'; 
-                res.referrals.forEach(r => { 
-                    let statusColor = r.status === 'Paid' ? '#10B981' : (r.status === 'Pending' ? '#EF4444' : 'var(--secondary-slate)');
-                    html += `<div class="list-card" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div class="list-card-title">${r.name}</div>
-                            <div style="font-size:0.85em; color:var(--secondary-slate);">${r.date}</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-weight:bold; color:var(--text-light);">$${r.amount}</div>
-                            <div style="font-size:0.8em; color:${statusColor}; font-weight:600;">${r.status}</div>
-                        </div>
-                    </div>`; 
-                }); 
-                document.getElementById('referralContainer').innerHTML = html; 
-            } else { 
-                document.getElementById('referralContainer').style.display = 'block'; 
-                document.getElementById('referralContainer').innerHTML = '<div class="empty-state">No referrals or scanning sessions recorded yet.</div>'; 
-            } 
         } else { 
-            document.getElementById('referralContainer').style.display = 'block'; 
-            document.getElementById('referralContainer').innerHTML = '<div style="color:#EF4444;">Failed to load Partner data.</div>'; 
+            // 🔥 FIX: Fallback to $0 if backend blocks non-partners, stop it from freezing on '--'
+            safeSet('refTotalPaid', `$0`);
+            let pendingEl = document.getElementById('refPendingPaid');
+            if(pendingEl && pendingEl.innerText === '--') safeSet('refPendingPaid', `$0`);
+            
+            if(rc) { rc.style.display = 'block'; rc.innerHTML = '<div class="empty-state">System data synced via Admin Terminal.</div>'; }
         } 
+    }).withFailureHandler(err => {
+        if(rl) rl.style.display = 'none';
+        let safeSet = (id, val) => { let el = document.getElementById(id); if (el) el.innerText = val; };
+        safeSet('refTotalPaid', `$0`);
+        let pendingEl = document.getElementById('refPendingPaid');
+        if(pendingEl && pendingEl.innerText === '--') safeSet('refPendingPaid', `$0`);
     }).getPartnerReferrals(loggedInUser); 
 }
 
