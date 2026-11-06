@@ -4811,50 +4811,62 @@ function deleteEvent(eventId) {
 function buyCredits(planType, gateway) { alert("In-app purchases are currently disabled. Please manage your billing via the web portal."); }
 
 function loadReferrals() { 
-    let refContainer = document.getElementById('referralTabContainer') || document.getElementById('referralsTabContainer');
-    if (refContainer) refContainer.style.display = 'block'; 
-    
-    let listContainer = document.getElementById('referralContainer');
-    if (listContainer) listContainer.innerHTML = getListSkeletonHTML(3); 
+    document.getElementById('referralLoading').style.display = 'block'; 
+    document.getElementById('referralContainer').innerHTML = ''; 
     
     google.script.run.withSuccessHandler(res => { 
-        let totalPaidEl = document.getElementById('refTotalPaid');
-        if(totalPaidEl) totalPaidEl.innerText = "$" + res.totalEarned; 
-        
-        currentPendingPayout = res.pendingPayout; 
-        let payoutNum = Number((currentPendingPayout || "0").toString().replace(/[^0-9.-]+/g,""));
-        
-        let pendingEl = document.getElementById('refPendingPaid');
-        if(pendingEl) pendingEl.innerText = `$${res.pendingPayout}`;
-        
-        let wdBtn = document.getElementById('btnWithdrawAction');
-        if (wdBtn) {
-            if (payoutNum > 0) {
-                wdBtn.disabled = false;
-                wdBtn.style.cssText = "background:#EF4444; color:#fff; margin-top:15px; padding:8px; box-shadow:none; cursor:pointer; width:100%; border:none; border-radius:8px;";
-                wdBtn.innerText = "Withdraw Funds";
-            } else {
-                wdBtn.disabled = true;
-                wdBtn.style.cssText = "background:transparent; border:1px solid var(--border-color); color:var(--secondary-slate); margin-top:15px; padding:8px; box-shadow:none; cursor:not-allowed; opacity:0.5; width:100%; border-radius:8px;";
-                wdBtn.innerText = "Withdraw Funds ($0)";
-            }
-        }
-
-        if(listContainer){ 
-            listContainer.innerHTML = ''; 
-            listContainer.style.display = 'block'; 
-            let recs = res.records || []; 
-            if (recs.length === 0) { listContainer.innerHTML = `<div class="empty-state">No referrals logged yet.</div>`; return; } 
+        document.getElementById('referralLoading').style.display = 'none'; 
+        if(res && res.success) { 
+            let totalEl = document.getElementById('refTotalPaid');
+            if(totalEl) totalEl.innerText = `$${res.totalPaid}`;
             
-            recs.forEach(r => { 
-                const statusColor = r.status.toLowerCase() === 'paid' ? '#10B981' : '#F59E0B'; 
-                const card = document.createElement('div'); 
-                card.className = 'list-card'; 
-                card.innerHTML = `<div class="list-card-header"><div class="list-card-title">${r.client}</div><div class="list-card-status" style="background:${statusColor}; color:white;">${r.status}</div></div><div class="list-card-body"><p><strong>Date:</strong> ${r.date}</p><p><strong>Company:</strong> ${r.company}</p><p><strong>Deal Value:</strong> $${r.value} | <strong>Rate:</strong> ${r.rate}</p><p style="margin-top:10px; font-size:1.1em; color:var(--accent-gold);"><strong>Earned: $${r.earned}</strong></p></div>`; 
-                listContainer.appendChild(card); 
-            });
+            let pendingEl = document.getElementById('refPendingPaid');
+            if(pendingEl) pendingEl.innerText = `$${res.pendingPayout}`;
+            
+            // 🔥 FIX: Force Admin Dashboard to sync with this backend value to prevent the ledger mismatch
+            let adminStat = document.getElementById('statPayouts');
+            if (adminStat) adminStat.innerText = `$${res.pendingPayout}`;
+
+            // Handle the Withdraw button state based on the actual value
+            const btnWithdraw = document.getElementById('btnWithdrawAction');
+            if (btnWithdraw) {
+                if (res.pendingPayout > 0) {
+                    btnWithdraw.disabled = false;
+                    btnWithdraw.style.opacity = '1';
+                    btnWithdraw.style.cursor = 'pointer';
+                } else {
+                    btnWithdraw.disabled = true;
+                    btnWithdraw.style.opacity = '0.5';
+                    btnWithdraw.style.cursor = 'not-allowed';
+                }
+            }
+
+            if(res.referrals && res.referrals.length > 0) { 
+                document.getElementById('referralContainer').style.display = 'block'; 
+                let html = '<h3 class="section-title">Settlement History & Active Referrals</h3>'; 
+                res.referrals.forEach(r => { 
+                    let statusColor = r.status === 'Paid' ? '#10B981' : (r.status === 'Pending' ? '#EF4444' : 'var(--secondary-slate)');
+                    html += `<div class="list-card" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div class="list-card-title">${r.name}</div>
+                            <div style="font-size:0.85em; color:var(--secondary-slate);">${r.date}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:bold; color:var(--text-light);">$${r.amount}</div>
+                            <div style="font-size:0.8em; color:${statusColor}; font-weight:600;">${r.status}</div>
+                        </div>
+                    </div>`; 
+                }); 
+                document.getElementById('referralContainer').innerHTML = html; 
+            } else { 
+                document.getElementById('referralContainer').style.display = 'block'; 
+                document.getElementById('referralContainer').innerHTML = '<div class="empty-state">No referrals or scanning sessions recorded yet.</div>'; 
+            } 
+        } else { 
+            document.getElementById('referralContainer').style.display = 'block'; 
+            document.getElementById('referralContainer').innerHTML = '<div style="color:#EF4444;">Failed to load Partner data.</div>'; 
         } 
-    }).getReferralData(loggedInUser, Date.now()); 
+    }).getPartnerReferrals(loggedInUser); 
 }
 
 
