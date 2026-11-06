@@ -731,8 +731,7 @@ html, body {
     .top-header { flex-direction: column !important; padding: 15px !important; }
     .omni-search-wrapper { max-width: 100% !important; margin-right: 0 !important; margin-bottom: 10px !important; }
     
-   /* 🔥 FIX: Force buttons to maintain their shape and NOT shrink/clip text */
-    /* 🔥 FIX: Force buttons to maintain their shape and NOT clip or shrink */
+    /* 🔥 FIX: Force buttons to maintain their shape and NOT shrink/clip text */
     .sidebar-btn { 
         white-space: nowrap !important; 
         display: inline-flex !important; 
@@ -740,7 +739,13 @@ html, body {
         justify-content: center !important;
         padding: 8px 18px !important;
         min-width: max-content !important;
-        flex-shrink: 0 !important; /* 🔥 STOPS THE SHRINKING */
+        flex-shrink: 0 !important; 
+    }
+
+    /* 🔥 FIX: Stop dropdown wrappers from crushing the buttons inside them */
+    .sidebar-dropdown {
+        flex-shrink: 0 !important;
+        min-width: max-content !important;
     }
 
     /* 🔥 FIX: Force Directory & Event filters to stack cleanly on mobile */
@@ -1174,8 +1179,8 @@ html, body {
         </div>
     </div>
 
-    <!-- 🔥 NEW: THE "MORE" OVERFLOW DROPDOWN FOR MOBILE -->
-    <div class="sidebar-dropdown">
+    <!-- 🔥 THE "MORE" MENU -->
+    <div class="sidebar-dropdown" id="navMoreDropdown">
         <button class="sidebar-btn" onclick="toggleMobileSidebarDropdown(event, this.parentElement)">⚙️ More ▾</button>
         <div class="sidebar-dropdown-content">
             <a id="tabLeaderboard" onclick="switchTab('leaderboard')">🏆 Leaderboard</a>
