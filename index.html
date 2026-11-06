@@ -1193,10 +1193,11 @@ html, body {
         <div id="omniDropdown" class="omni-dropdown"></div>
     </div>
 
-    <!-- Right: Utility Icons -->
+<!-- Right: Utility Icons -->
     <div class="top-actions" style="border-top:none; padding-top:0; justify-content:flex-end; gap:12px;">
-        <span class="credits-display"><span style="color:var(--secondary-slate); margin-right:5px;">Credits:</span> <span id="creditBalance" style="color: var(--accent-gold);">0</span></span>
-        
+        <!-- 🔥 FIX: Changed 0 to ... to prevent the "guest shell" flash -->
+        <span class="credits-display"><span style="color:var(--secondary-slate); margin-right:5px;">Credits:</span> <span id="creditBalance" style="color: var(--accent-gold);">...</span></span>
+  
         <button class="btn-text" id="aiConciergeBtnDesktop" onclick="toggleAiChat()" title="AI Concierge" style="display:none; border-color: var(--accent-gold); color: var(--accent-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); font-weight: 600; gap: 8px;">
             <span>🤖</span> Ask AI
         </button>
