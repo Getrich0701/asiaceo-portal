@@ -1145,9 +1145,7 @@ html, body {
 
 <div class="sidebar-menu" id="mobileNavGroup">
     <button id="tabPulse" class="sidebar-btn active" onclick="switchTab('pulse')">Live Pulse <span style="color:#10B981;">●</span></button>
-
-    <!-- 🔥 ADD THIS NEW BUTTON -->
-   <button id="tabRadar" class="sidebar-btn" onclick="switchTab('radar')">📡 Live Radar</button>
+    <button id="tabRadar" class="sidebar-btn" onclick="switchTab('radar')">📡 Live Radar</button>
     <button id="tabSearch" class="sidebar-btn" onclick="switchTab('search')">Directory</button>
     
     <!-- THE EXCHANGE DROPDOWN -->
@@ -1176,11 +1174,16 @@ html, body {
         </div>
     </div>
 
-    <button id="tabLeaderboard" class="sidebar-btn" onclick="switchTab('leaderboard')">🏆 Leaderboard</button>
-    <button id="tabGroupBookmarks" class="sidebar-btn" onclick="switchTab('bookmarks')">Saved 🔖</button>
-    
-    <button id="tabReferrals" class="sidebar-btn" onclick="switchTab('referrals')" style="display:none; color:var(--accent-gold);">Partner Hub</button>
-    <button id="tabAdmin" class="sidebar-btn" onclick="switchTab('admin')" style="display:none; color:#EF4444;">Admin 👑</button>
+    <!-- 🔥 NEW: THE "MORE" OVERFLOW DROPDOWN FOR MOBILE -->
+    <div class="sidebar-dropdown">
+        <button class="sidebar-btn" onclick="toggleMobileSidebarDropdown(event, this.parentElement)">⚙️ More ▾</button>
+        <div class="sidebar-dropdown-content">
+            <a id="tabLeaderboard" onclick="switchTab('leaderboard')">🏆 Leaderboard</a>
+            <a id="tabGroupBookmarks" onclick="switchTab('bookmarks')">Saved 🔖</a>
+            <a id="tabReferrals" onclick="switchTab('referrals')" style="display:none; color:var(--accent-gold);">Partner Hub</a>
+            <a id="tabAdmin" onclick="switchTab('admin')" style="display:none; color:#EF4444;">Admin 👑</a>
+        </div>
+    </div>
 </div>
 
     </aside>
@@ -1264,12 +1267,14 @@ html, body {
                 <button id="btnTriggerRadar" class="btn-primary" style="width: auto; margin: 0 auto;" onclick="triggerDealRadar()">Fire Deal Radar Sequence</button>
             </div>
             
-            <div class="profile-grid">
-                <div class="container" style="text-align:center;"><h3>Total Members</h3><div id="statMembers" style="font-size:2.5em; color:var(--text-light); font-weight:700;">0</div></div>
-                <div class="container" style="text-align:center;"><h3>Active Deals</h3><div id="statDeals" style="font-size:2.5em; color:var(--accent-gold); font-weight:700;">0</div></div>
-                <div class="container" style="text-align:center;"><h3>System Credits</h3><div id="statCredits" style="font-size:2.5em; color:#10B981; font-weight:700;">0</div></div>
-                <div class="container" style="text-align:center; border:2px solid #EF4444;"><h3>Pending Payouts</h3><div id="statPayouts" style="font-size:2.5em; color:#EF4444; font-weight:700;">$0</div></div>
+           <div class="profile-grid">
+                <div class="container" style="text-align:center;"><h3>Total Members</h3><div id="statMembers" style="font-size:2.5em; color:var(--text-light); font-weight:700;">--</div></div>
+                <div class="container" style="text-align:center;"><h3>Active Deals</h3><div id="statDeals" style="font-size:2.5em; color:var(--accent-gold); font-weight:700;">--</div></div>
+                <div class="container" style="text-align:center;"><h3>System Credits</h3><div id="statCredits" style="font-size:2.5em; color:#10B981; font-weight:700;">--</div></div>
+                <div class="container" style="text-align:center; border:2px solid #EF4444;"><h3>Pending Payouts</h3><div id="statPayouts" style="font-size:2.5em; color:#EF4444; font-weight:700;">--</div></div>
             </div>
+
+          
             <!-- ADMIN BROADCAST COMMAND -->
             <div class="container" style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); margin-bottom: 25px;">
                 <h3 style="color: var(--text-light); margin-top:0; display:flex; align-items:center; gap:8px;"><span>📢</span> Broadcast Executive Dispatch</h3>
