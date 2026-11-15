@@ -2980,8 +2980,10 @@ function iosSafeConfirm(title, icon, message, onConfirm) {
 let portalInitialized = false; // 🔥 THIS STOPS THE LOGIN LOOP CRASH
 let biometricRequested = false;
 
+let portalInitialized = false; // 🔥 THIS STOPS THE LOGIN LOOP CRASH
+let biometricRequested = false;
+
 function initializePortal() {
-    // 🔥 If it already ran, stop it from running again!
     if (portalInitialized) return; 
     portalInitialized = true;
 
@@ -2991,7 +2993,6 @@ function initializePortal() {
 
     window.parent.postMessage({ action: 'pageReady' }, "*");
 
-   // 🔥 APPLE 3.1.1 COMPLIANCE: Hide all external payment & membership links on iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     if (isIOS) {
         let billingBtn = document.getElementById('btnBillingNav');
@@ -3003,10 +3004,8 @@ function initializePortal() {
         document.querySelectorAll('.ios-hide-link').forEach(el => el.style.display = 'none');
     }
     
-    // 1. Fetch deal dropdowns
     google.script.run.withSuccessHandler(populateDealDropdowns).getDealDropdownOptions();
     
-    // 2. Fetch main dropdowns AND hide splash screen only after data arrives!
     google.script.run.withSuccessHandler(res => {
         populateDropdowns(res);
         setTimeout(function() {
@@ -3021,7 +3020,6 @@ function initializePortal() {
         if (splash) splash.style.display = 'none';
     }).getDropdownOptions(); 
 
-    // 🔥 NATIVE BRIDGE: Ask iPhone if it has saved credentials
     if (!biometricRequested) {
         if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.biometricBridge) {
             biometricRequested = true;
@@ -3033,27 +3031,30 @@ function initializePortal() {
         }
     }
 
-   // 🔥 HIGH PRIORITY FIX: Session Survival & Auto Login Engine (Bypass Password Check)
     let savedSession = null;
     try {
         savedSession = localStorage.getItem('cardsUserEmail') || localStorage.getItem('asiaCeoSession');
     } catch(e) { console.warn("Storage restricted"); }
 
     if (savedSession) { 
-        loggedInUser = savedSession; // Instantly lock in identity
+        loggedInUser = savedSession; 
         
-        // Instantly hide the login screen so the user never sees it
+        // 🔥 Instant kill the splash screen to prevent flashing
+        let splash = document.getElementById('globalSplashScreen');
+        if (splash) {
+            splash.style.display = 'none';
+            splash.style.opacity = '0';
+        }
+
         document.getElementById('loginView').style.display = 'none';
         document.getElementById('authContainer').style.display = 'none';
         document.getElementById('dashboardView').style.display = 'flex';
         document.getElementById('aiConciergeBtnDesktop').style.display = 'flex'; 
         document.getElementById('aiConciergeBtnMobile').style.display = 'flex';
         
-        // 🔥 Trigger silent data refresh instead of a full password login
         refreshDashboard(); 
     }
 
-    // 🔥 ULTIMATE SPLASH SCREEN FAILSAFE 🔥
     setTimeout(function() {
         const splash = document.getElementById('globalSplashScreen');
         if (splash && splash.style.display !== 'none') {
@@ -3101,14 +3102,13 @@ function switchTab(t, bypassHistory = false) {
     let omniDrop = document.getElementById('omniDropdown'); if(omniDrop) { omniDrop.style.display = 'none'; }
     closeAllMobileDropdowns();
     
-    // 🔥 FIX: Added 'radar' so the tab properly hides when switching away
     ['search','history','bookmarks','profile','billing', 'postDeal', 'dealBoard', 'talentBoard', 'postJob', 'postCandidate', 'boardBoard', 'postBoardRole', 'postBoardCandidate', 'procurementBoard', 'postProcurement', 'promote', 'manageEvents', 'invite', 'guestList', 'referrals', 'messages', 'admin', 'travelBoard', 'postTravel', 'pulse', 'radar', 'marketEntryBoard', 'postMarketEntry', 'leaderboard', 'tickets', 'perks', 'partners', 'postPartner', 'presidents'].forEach(x => { 
         let el = document.getElementById(x+'TabContainer'); if(el) el.style.display='none'; 
     });
     
-    // 🔥 FIX: Added 'tabRadar' so the button properly deselects
+    // 🔥 BULLETPROOF TAB DEACTIVATION
     ['tabSearch', 'tabGroupDeals', 'tabGroupTalent', 'tabGroupBoard', 'tabGroupProcure', 'tabGroupEvents', 'tabGroupBookmarks', 'tabReferrals', 'tabAdmin', 'tabGroupTravel', 'tabPulse', 'tabRadar', 'tabGroupExpansion', 'tabLeaderboard', 'tabTickets', 'tabPerks', 'tabPartners', 'tabPostPartner', 'tabPresidents'].forEach(id => { 
-        let el = document.getElementById(id); if(el) el.classList.remove('active'); 
+        document.querySelectorAll('#' + id).forEach(el => el.classList.remove('active')); 
     });
     
     let targetContainer = document.getElementById(t+'TabContainer'); if(targetContainer) targetContainer.style.display = 'block'; 
@@ -3117,50 +3117,47 @@ function switchTab(t, bypassHistory = false) {
     let banner = document.getElementById('executiveDispatchBanner');
     if (banner) { if (t !== 'pulse') { banner.style.display = 'none'; } }
 
+    let setActive = (id) => document.querySelectorAll('#' + id).forEach(el => el.classList.add('active'));
+
     if(t==='profile') { loadMyProfile(); } 
-    else if(t==='pulse') { let btn = document.getElementById('tabPulse'); if(btn) btn.classList.add('active'); setTimeout(() => { loadPulseFeed(); loadDispatchBanner(); }, 50); }
-    else if(t==='radar') { let btn = document.getElementById('tabRadar'); if(btn) btn.classList.add('active'); loadLiveRadar(); } 
+    else if(t==='pulse') { setActive('tabPulse'); setTimeout(() => { loadPulseFeed(); loadDispatchBanner(); }, 50); } 
+    else if(t==='radar') { setActive('tabRadar'); loadLiveRadar(); } 
     else if(t==='history') { if(document.getElementById('historyBadge')) document.getElementById('historyBadge').style.display = 'none'; localStorage.setItem(loggedInUser + '_historyCount', latestHistoryCount); loadFullHistory(); } 
     else if(t==='messages') { if (activeChatEmail !== "") openChat(activeChatEmail, activeChatName); else loadInbox(); } 
-    else if(t==='bookmarks') { let btn = document.getElementById('tabGroupBookmarks'); if(btn) btn.classList.add('active'); loadBookmarks(); } 
-    else if(t==='dealBoard') { let btn = document.getElementById('tabGroupDeals'); if(btn) btn.classList.add('active'); loadDealBoardData(); } 
-    else if(t==='talentBoard') { let btn = document.getElementById('tabGroupTalent'); if(btn) btn.classList.add('active'); loadTalentBoard(); } 
-    else if(t==='boardBoard') { let btn = document.getElementById('tabGroupBoard'); if(btn) btn.classList.add('active'); loadBoardBoard(); } 
-    else if(t==='procurementBoard') { let btn = document.getElementById('tabGroupProcure'); if(btn) btn.classList.add('active'); loadProcurementBoard(); } 
-    else if(t==='referrals') { let btn = document.getElementById('tabReferrals'); if(btn) btn.classList.add('active'); loadReferrals(); } 
-    else if(t==='manageEvents') { let btn = document.getElementById('tabGroupEvents'); if(btn) btn.classList.add('active'); loadManageEvents(); } 
-    else if(t==='guestList') { let btn = document.getElementById('tabGroupEvents'); if(btn) btn.classList.add('active'); populateGuestListDropdown(); } 
+    else if(t==='bookmarks') { setActive('tabGroupBookmarks'); loadBookmarks(); } 
+    else if(t==='dealBoard') { setActive('tabGroupDeals'); loadDealBoardData(); } 
+    else if(t==='talentBoard') { setActive('tabGroupTalent'); loadTalentBoard(); } 
+    else if(t==='boardBoard') { setActive('tabGroupBoard'); loadBoardBoard(); } 
+    else if(t==='procurementBoard') { setActive('tabGroupProcure'); loadProcurementBoard(); } 
+    else if(t==='referrals') { setActive('tabReferrals'); loadReferrals(); } 
+    else if(t==='manageEvents') { setActive('tabGroupEvents'); loadManageEvents(); } 
+    else if(t==='guestList') { setActive('tabGroupEvents'); populateGuestListDropdown(); } 
     else if(t==='search') { let compInp = document.getElementById('company'); let recSec = document.getElementById('recommendationsSection'); if(compInp && recSec && compInp.value === '') { recSec.style.display = 'block'; } let sArea = document.getElementById('searchResultsArea'); if(sArea && sArea.style.display === 'block') performSearch(); } 
     else if(t==='invite') { let sArea = document.getElementById('invSearchResultsArea'); if(sArea && sArea.style.display === 'block') performInviteSearch(); } 
-    else if(t==='admin') { let btn = document.getElementById('tabAdmin'); if(btn) btn.classList.add('active'); loadAdminAnalytics(); } 
-    else if(t==='marketEntryBoard') { let btn = document.getElementById('tabGroupExpansion'); if(btn) btn.classList.add('active'); loadMarketEntryBoard(); }
-    else if(['postDeal'].includes(t)) { let btn = document.getElementById('tabGroupDeals'); if(btn) btn.classList.add('active'); } 
-    else if(['postJob','postCandidate'].includes(t)) { let btn = document.getElementById('tabGroupTalent'); if(btn) btn.classList.add('active'); } 
-    else if(['postBoardRole','postBoardCandidate'].includes(t)) { let btn = document.getElementById('tabGroupBoard'); if(btn) btn.classList.add('active'); } 
-    else if(['postProcurement'].includes(t)) { let btn = document.getElementById('tabGroupProcure'); if(btn) btn.classList.add('active'); } 
-    else if(['promote'].includes(t)) { let btn = document.getElementById('tabGroupEvents'); if(btn) btn.classList.add('active'); } 
-    else if(t==='travelBoard') { let btn = document.getElementById('tabGroupTravel'); if(btn) btn.classList.add('active'); loadTravelBoardData(); }
-    else if(['postTravel'].includes(t)) { let btn = document.getElementById('tabGroupTravel'); if(btn) btn.classList.add('active'); }
-    else if(['postMarketEntry'].includes(t)) { let btn = document.getElementById('tabGroupExpansion'); if(btn) btn.classList.add('active'); }
-else if(t==='leaderboard') { let btn = document.getElementById('tabLeaderboard'); if(btn) btn.classList.add('active'); loadLeaderboard(); }
+    else if(t==='admin') { setActive('tabAdmin'); loadAdminAnalytics(); } 
+    else if(t==='marketEntryBoard') { setActive('tabGroupExpansion'); loadMarketEntryBoard(); }
+    else if(['postDeal'].includes(t)) { setActive('tabGroupDeals'); } 
+    else if(['postJob','postCandidate'].includes(t)) { setActive('tabGroupTalent'); } 
+    else if(['postBoardRole','postBoardCandidate'].includes(t)) { setActive('tabGroupBoard'); } 
+    else if(['postProcurement'].includes(t)) { setActive('tabGroupProcure'); } 
+    else if(['promote'].includes(t)) { setActive('tabGroupEvents'); } 
+    else if(t==='travelBoard') { setActive('tabGroupTravel'); loadTravelBoardData(); }
+    else if(['postTravel'].includes(t)) { setActive('tabGroupTravel'); }
+    else if(['postMarketEntry'].includes(t)) { setActive('tabGroupExpansion'); }
+    else if(t==='leaderboard') { setActive('tabLeaderboard'); loadLeaderboard(); }
     else if(t==='tickets') { 
-        let btn = document.getElementById('tabTickets'); 
-        if(btn) btn.classList.add('active'); 
-        
-        // 🔥 CRITICAL FIX: Safely checks admin status without throwing a fatal ReferenceError
-        let isAdminUser = (document.getElementById('tabAdmin') && document.getElementById('tabAdmin').style.display === 'flex');
-        let postBtn = document.getElementById('btnPostTicketUI');
-        if (postBtn && (isUserPartner || isAdminUser)) {
-            postBtn.style.display = 'block';
-        }
-        
+        setActive('tabTickets'); 
+        let isAdminUser = (document.getElementById('tabAdmin') && document.getElementById('tabAdmin').style.display === 'block');
+        document.querySelectorAll('#btnPostTicketUI').forEach(btn => {
+            if (isUserPartner || isAdminUser) btn.style.display = 'block';
+        });
         loadTickets(); 
     }
-    else if(t==='perks') { let btn = document.getElementById('tabPerks'); if(btn) btn.classList.add('active'); loadPerks(); }
-    else if(t==='partners') { let btn = document.getElementById('tabPartners'); if(btn) btn.classList.add('active'); loadPartnersBoard(); }
-    else if(t==='postPartner') { let btn = document.getElementById('tabPostPartner'); if(btn) btn.classList.add('active'); }
-    else if(t==='presidents') { let btn = document.getElementById('tabPresidents'); if(btn) btn.classList.add('active'); loadPresidentsBoard(); }
-    else { let btn = document.getElementById('tabSearch'); if(btn && t!=='billing') btn.classList.add('active'); } 
+    else if(t==='perks') { setActive('tabPerks'); loadPerks(); }
+    else if(t==='partners') { setActive('tabPartners'); loadPartnersBoard(); }
+    else if(t==='postPartner') { setActive('tabPostPartner'); }
+    else if(t==='presidents') { setActive('tabPresidents'); loadPresidentsBoard(); }
+    else { if(t!=='billing') setActive('tabSearch'); } 
 }
 
   function handleOmniRouting(tabName, itemTitle, isDirectory) { let omniDrop = document.getElementById('omniDropdown'); if(omniDrop) omniDrop.style.display='none'; let omniInp = document.getElementById('omniInput'); if(omniInp) omniInp.value=''; switchTab(tabName); setTimeout(() => { if (isDirectory) { clearFilters(); if (itemTitle) { let compInp = document.getElementById('company'); if(compInp) compInp.value = decodeURIComponent(itemTitle); } let recSec = document.getElementById('recommendationsSection'); if(recSec) recSec.style.display = 'none'; performSearch(); } else if (tabName === 'dealBoard') { loadDealBoardData(); setTimeout(() => { let dealRecSec = document.getElementById('dealRecommendationsSection'); if(dealRecSec) dealRecSec.style.display = 'none'; }, 300); } else if (tabName === 'talentBoard') { loadTalentBoard(); } else if (tabName === 'boardBoard') { loadBoardBoard(); } else if (tabName === 'procurementBoard') { loadProcurementBoard(); } }, 300); }
@@ -6747,7 +6744,7 @@ window.closeIosDownloadModal = function() {
     // 🔥 FIX 4: Restore background scrolling when the modal is closed
     document.body.style.overflow = '';
 };
-
+  
 // ==========================================
 // O2O PARTNER REDEMPTION ENGINE (DUAL-MODE BRIDGE)
 // ==========================================
@@ -6783,15 +6780,13 @@ function triggerPartnerVerification(verifyId) {
 
             if (res && res.success && res.isValid) {
                 let pic = res.profilePic ? `<img src="${res.profilePic}" style="width:120px; height:120px; border-radius:50%; border:4px solid #10B981; object-fit:cover; margin-bottom:20px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">` : `<div style="font-size:5em; margin-bottom:20px;">👤</div>`;
-                
-                // 🔥 DUAL-MODE LOGIC: Check if the scanner is a regular member or a venue partner
-                let isScannerAdminOrPartner = (typeof isUserPartner !== 'undefined' && isUserPartner) || (document.getElementById('tabAdmin') && document.getElementById('tabAdmin').style.display === 'block');
 
-                if (!isScannerAdminOrPartner || res.isPeerScan) {
+                // 🔥 DUAL-MODE LOGIC: Rely entirely on the backend's strict determination
+                if (res.isPeerScan) {
                     // ----------------------------------------------------
                     // MODE 1: CEO/MEMBER SCAN (Digital Black Card UI)
                     // ----------------------------------------------------
-                    vUI.style.background = "#020617"; // Ultra-dark luxury background
+                    vUI.style.background = "#020617"; 
                     let safeProfileData = res.profileData ? escape(JSON.stringify(res.profileData)) : '{}';
 
                     vUI.innerHTML = `
@@ -6858,7 +6853,7 @@ function triggerPartnerVerification(verifyId) {
     };
     window.addEventListener('message', verifyListener);
 
-   // 4. 🔥 RACE CONDITION FIX: Ensure scanner identity is locked before fetching
+    // 4. 🔥 RACE CONDITION FIX: Ensure scanner identity is locked before fetching
     let activeScanner = loggedInUser || localStorage.getItem('asiaCeoSession') || localStorage.getItem('cardsUserEmail') || "";
     
     window.parent.postMessage({ 
