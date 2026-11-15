@@ -2980,9 +2980,6 @@ function iosSafeConfirm(title, icon, message, onConfirm) {
 let portalInitialized = false; // 🔥 THIS STOPS THE LOGIN LOOP CRASH
 let biometricRequested = false;
 
-let portalInitialized = false; // 🔥 THIS STOPS THE LOGIN LOOP CRASH
-let biometricRequested = false;
-
 function initializePortal() {
     if (portalInitialized) return; 
     portalInitialized = true;
