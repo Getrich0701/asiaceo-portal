@@ -1211,7 +1211,7 @@ html, body {
 <!-- Right: Utility Icons -->
     <div class="top-actions" style="border-top:none; padding-top:0; justify-content:flex-end; gap:12px;">
         <!-- 🔥 FIX: Changed 0 to ... to prevent the "guest shell" flash -->
-        <span class="credits-display"><span style="color:var(--secondary-slate); margin-right:5px;">Credits:</span> <span id="creditBalance" style="color: var(--accent-gold);">...</span></span>
+        <span class="credits-display"><span style="color:var(--secondary-slate); margin-right:5px;">Credits:</span> <span id="creditBalance" style="color: var(--accent-gold);"></span></span>
   
         <button class="btn-text" id="aiConciergeBtnDesktop" onclick="toggleAiChat()" title="AI Concierge" style="display:none; border-color: var(--accent-gold); color: var(--accent-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); font-weight: 600; gap: 8px;">
             <span>🤖</span> Ask AI
@@ -2985,6 +2985,10 @@ function initializePortal() {
     if (portalInitialized) return; 
     portalInitialized = true;
 
+    // 🔥 Inject cached credits instantly to stop the "..." flash
+    let cachedCredits = localStorage.getItem('cachedCredits');
+    if (cachedCredits) document.getElementById('creditBalance').innerText = cachedCredits;
+
     window.parent.postMessage({ action: 'pageReady' }, "*");
 
    // 🔥 APPLE 3.1.1 COMPLIANCE: Hide all external payment & membership links on iOS
@@ -3058,6 +3062,7 @@ function initializePortal() {
         }
     }, 5000); 
 }
+  
 // 1. Run instantly the exact millisecond the script is read
 initializePortal();
 // 2. Run again 0.5s later as a backup
@@ -3445,6 +3450,10 @@ function handleLoginResponse(res) {
     if (res.success) { 
         loggedInUser = document.getElementById('userEmail').value.trim(); 
         document.getElementById('creditBalance').innerText = res.credits; 
+        
+        // 🔥 Cache the credits immediately to stop flashing on reload
+        localStorage.setItem('cachedCredits', res.credits);
+        
         isUserPartner = res.isPartner;
 
         // 🔥 HIGH PRIORITY FIX: Always save session identity, even if Remember Me is off, so navigating away from verifyID doesn't kill the session.
@@ -4714,6 +4723,9 @@ function refreshDashboard() {
     google.script.run.withSuccessHandler(res => { 
         if(res && res.success) { 
             document.getElementById('creditBalance').innerText = res.credits; 
+            
+            // 🔥 Cache the credits immediately to stop flashing on reload
+            localStorage.setItem('cachedCredits', res.credits);
             
             // 🔥 FIX: Restore Elite Tabs and ensure Admins get master access using querySelectorAll
             isUserPartner = res.isPartner; 
@@ -6764,7 +6776,7 @@ function triggerPartnerVerification(verifyId) {
             if (err) {
                 vUI.innerHTML = `
                     <div style="color:#EF4444; background:#fff; padding:20px; border-radius:12px; font-weight:bold;">System Error: ${err}</div>
-                    <button class="btn-secondary" style="margin-top:20px; border-color:#fff; color:#fff;" onclick="window.location.reload()">Return to Portal</button>
+                    <button class="btn-secondary" style="margin-top:20px; border-color:#fff; color:#fff;" onclick="window.location.href = window.location.pathname + '?tab=pulse'">Return to Portal</button>
                 `;
                 return;
             }
@@ -6797,7 +6809,7 @@ function triggerPartnerVerification(verifyId) {
                                 ✨ Send Warm Intro Request (1 Credit)
                             </button>
                             
-                            <button class="btn-secondary" style="width:100%; border-color:var(--secondary-slate); color:var(--secondary-slate); padding:14px;" onclick="window.location.reload()">
+                            <button class="btn-secondary" style="width:100%; border-color:var(--secondary-slate); color:var(--secondary-slate); padding:14px;" onclick="window.location.href = window.location.pathname + '?tab=pulse'">
                                 Return to Portal
                             </button>
                         </div>
@@ -6811,7 +6823,8 @@ function triggerPartnerVerification(verifyId) {
                         <div style="background:#fff; border-radius:24px; padding:40px 20px; width:100%; max-width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.6); animation: slideDownNav 0.4s ease-out; box-sizing: border-box;">
                             ${pic}
                             <div style="color:#10B981; font-size:4em; line-height:1; margin-bottom:10px; filter:drop-shadow(0 4px 10px rgba(16,185,129,0.3));">✅</div>
-                            <h1 style="color:#064E3B; margin:0 0 5px 0; font-family:'Playfair Display', serif; font-size:2.2em;">${res.name}</h1>
+                            <h2 style="color:#064E3B; margin:0 0 10px 0; font-family:'Playfair Display', serif; font-size:2em;">Access Granted</h2>
+                            <h3 style="color:#475569; margin:0 0 5px 0; font-size:1.4em;">${res.name}</h3>
                             <p style="color:#475569; margin:0 0 5px 0; font-weight:600; font-size:1.15em;">${res.title}</p>
                             <p style="color:#94A3B8; margin:0 0 20px 0; font-size:1em;">${res.company}</p>
                             
@@ -6820,7 +6833,7 @@ function triggerPartnerVerification(verifyId) {
                             </div>
                             <p style="color:#94A3B8; font-size:0.75em; margin-top:35px; text-transform:uppercase; letter-spacing:1px;">Asia CEO Community<br>Official Partner Gateway</p>
 
-                            <button class="btn-secondary" style="width:100%; margin-top:20px; border-color:#94A3B8; color:#94A3B8;" onclick="window.location.reload()">
+                            <button class="btn-secondary" style="width:100%; margin-top:20px; border-color:#94A3B8; color:#94A3B8;" onclick="window.location.href = window.location.pathname + '?tab=pulse'">
                                 Close Scanner
                             </button>
                         </div>
@@ -6835,7 +6848,7 @@ function triggerPartnerVerification(verifyId) {
                         <h2 style="color:#7F1D1D; margin:0 0 10px 0; font-family:'Playfair Display', serif; font-size:2em;">Access Denied</h2>
                         <p style="color:#475569; font-weight:600; font-size:1.1em; padding: 0 20px;">${(res ? res.error : "") || (res ? res.message : "") || "Invalid or Expired Membership"}</p>
                         <p style="color:#94A3B8; font-size:0.75em; margin-top:40px; text-transform:uppercase; letter-spacing:1px;">Asia CEO Community</p>
-                        <button class="btn-secondary" style="width:100%; margin-top:20px; border-color:#94A3B8; color:#94A3B8;" onclick="window.location.reload()">
+                        <button class="btn-secondary" style="width:100%; margin-top:20px; border-color:#94A3B8; color:#94A3B8;" onclick="window.location.href = window.location.pathname + '?tab=pulse'">
                             Close Scanner
                         </button>
                     </div>
