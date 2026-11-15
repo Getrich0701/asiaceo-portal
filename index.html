@@ -731,6 +731,12 @@ html, body {
     .top-header { flex-direction: column !important; padding: 15px !important; }
     .omni-search-wrapper { max-width: 100% !important; margin-right: 0 !important; margin-bottom: 10px !important; }
     
+    /* 🔥 MOBILE SIDEBAR FIX: Stops tabs from squeezing and restores dropdown architecture */
+    .sidebar-menu { 
+        display: flex !important; 
+        gap: 8px; 
+    }
+    
     /* 🔥 FIX: Force buttons to maintain their shape and NOT shrink/clip text */
     .sidebar-btn { 
         white-space: nowrap !important; 
@@ -742,10 +748,11 @@ html, body {
         flex-shrink: 0 !important; 
     }
 
-    /* 🔥 FIX: Stop dropdown wrappers from crushing the buttons inside them */
+    /* 🔥 FIX: Stop dropdown wrappers from crushing and allow menu to open */
     .sidebar-dropdown {
         flex-shrink: 0 !important;
         min-width: max-content !important;
+        position: static !important; 
     }
 
     /* 🔥 FIX: Force Directory & Event filters to stack cleanly on mobile */
@@ -2068,7 +2075,7 @@ html, body {
         <h2 style="color:white; border-bottom-color:#3B82F6; margin:0; display:flex; align-items:center; gap:10px;">
             <span>🌍</span> Global Chapter Presidents
         </h2>
-        <p style="font-size:0.95em; color:var(--secondary-slate); line-height:1.5; margin-top:15px; margin-bottom:0;">Connect with our 45 esteemed Chapter Presidents around the world. These elite leaders spearhead regional growth, broker local partnerships, and host exclusive Asia CEO events.</p>
+        <p style="font-size:0.95em; color:var(--secondary-slate); line-height:1.5; margin-top:15px; margin-bottom:0;">Connect with our esteemed Chapter Presidents around the world. These elite leaders spearhead regional growth, broker local partnerships, and host exclusive Asia CEO events.</p>
     </div>
     
     <div class="container">
@@ -3106,7 +3113,7 @@ function switchTab(t, bypassHistory = false) {
     if (banner) { if (t !== 'pulse') { banner.style.display = 'none'; } }
 
     if(t==='profile') { loadMyProfile(); } 
-    else if(t==='pulse') { let btn = document.getElementById('tabPulse'); if(btn) btn.classList.add('active'); loadPulseFeed(); loadDispatchBanner(); } 
+    else if(t==='pulse') { let btn = document.getElementById('tabPulse'); if(btn) btn.classList.add('active'); setTimeout(() => { loadPulseFeed(); loadDispatchBanner(); }, 50); }
     else if(t==='radar') { let btn = document.getElementById('tabRadar'); if(btn) btn.classList.add('active'); loadLiveRadar(); } 
     else if(t==='history') { if(document.getElementById('historyBadge')) document.getElementById('historyBadge').style.display = 'none'; localStorage.setItem(loggedInUser + '_historyCount', latestHistoryCount); loadFullHistory(); } 
     else if(t==='messages') { if (activeChatEmail !== "") openChat(activeChatEmail, activeChatName); else loadInbox(); } 
@@ -6838,10 +6845,12 @@ function triggerPartnerVerification(verifyId) {
     };
     window.addEventListener('message', verifyListener);
 
-    // 4. 🔥 CRITICAL FIX: Send the Request AND the Scanner's Identity up to Wix
+   // 4. 🔥 RACE CONDITION FIX: Ensure scanner identity is locked before fetching
+    let activeScanner = loggedInUser || localStorage.getItem('asiaCeoSession') || localStorage.getItem('cardsUserEmail') || "";
+    
     window.parent.postMessage({ 
         action: 'verifyMemberStatus', 
-        args: [verifyId, loggedInUser], 
+        args: [verifyId, activeScanner], 
         callbackId: callbackId 
     }, "*");
 }
