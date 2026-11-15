@@ -6730,7 +6730,7 @@ window.closeIosDownloadModal = function() {
 };
 
 // ==========================================
-// O2O PARTNER REDEMPTION ENGINE (UPDATED BRIDGE)
+// O2O PARTNER REDEMPTION ENGINE (DUAL-MODE BRIDGE)
 // ==========================================
 function triggerPartnerVerification(verifyId) { 
     // 1. Hide the entire normal portal
@@ -6755,29 +6755,70 @@ function triggerPartnerVerification(verifyId) {
             let err = event.data.error;
 
             if (err) {
-                vUI.innerHTML = `<div style="color:#EF4444; background:#fff; padding:20px; border-radius:12px; font-weight:bold;">System Error: ${err}</div>`;
+                vUI.innerHTML = `
+                    <div style="color:#EF4444; background:#fff; padding:20px; border-radius:12px; font-weight:bold;">System Error: ${err}</div>
+                    <button class="btn-secondary" style="margin-top:20px; border-color:#fff; color:#fff;" onclick="window.location.reload()">Return to Portal</button>
+                `;
                 return;
             }
 
             if (res && res.success && res.isValid) {
-                // GREEN LIGHT - ACTIVE VIP
                 let pic = res.profilePic ? `<img src="${res.profilePic}" style="width:120px; height:120px; border-radius:50%; border:4px solid #10B981; object-fit:cover; margin-bottom:20px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">` : `<div style="font-size:5em; margin-bottom:20px;">👤</div>`;
                 
-                vUI.style.background = "#064E3B"; 
-                vUI.innerHTML = `
-                    <div style="background:#fff; border-radius:24px; padding:40px 20px; width:100%; max-width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.6); animation: slideDownNav 0.4s ease-out; box-sizing: border-box;">
-                        ${pic}
-                        <div style="color:#10B981; font-size:4em; line-height:1; margin-bottom:10px; filter:drop-shadow(0 4px 10px rgba(16,185,129,0.3));">✅</div>
-                        <h1 style="color:#064E3B; margin:0 0 5px 0; font-family:'Playfair Display', serif; font-size:2.2em;">${res.name}</h1>
-                        <p style="color:#475569; margin:0 0 5px 0; font-weight:600; font-size:1.15em;">${res.title}</p>
-                        <p style="color:#94A3B8; margin:0 0 20px 0; font-size:1em;">${res.company}</p>
-                        
-                        <div style="display:inline-block; background:rgba(16,185,129,0.1); color:#10B981; padding:10px 20px; border-radius:30px; font-weight:bold; letter-spacing:1px; border:2px solid #10B981; font-size: 0.85em;">
-                            ${res.message} • ${res.tier}
+                // 🔥 DUAL-MODE LOGIC: Check if the scanner is a regular member or a venue partner
+                let isScannerAdminOrPartner = (typeof isUserPartner !== 'undefined' && isUserPartner) || (document.getElementById('tabAdmin') && document.getElementById('tabAdmin').style.display === 'block');
+
+                if (!isScannerAdminOrPartner || res.isPeerScan) {
+                    // ----------------------------------------------------
+                    // MODE 1: CEO/MEMBER SCAN (Digital Black Card UI)
+                    // ----------------------------------------------------
+                    vUI.style.background = "#020617"; // Ultra-dark luxury background
+                    let safeProfileData = res.profileData ? escape(JSON.stringify(res.profileData)) : '{}';
+
+                    vUI.innerHTML = `
+                        <div style="background:linear-gradient(180deg, #131A26 0%, #070B12 100%); border-radius:24px; padding:40px 20px; width:100%; max-width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.8), 0 0 20px rgba(212, 175, 55, 0.15); border:1px solid var(--accent-gold); animation: slideDownNav 0.4s ease-out; box-sizing: border-box;">
+                            ${pic}
+                            <div style="display:inline-block; background:rgba(212, 175, 55, 0.1); border:1px solid rgba(212, 175, 55, 0.3); color:var(--accent-gold); padding:4px 10px; border-radius:12px; font-size:0.7em; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:15px;">
+                                Connection Logged
+                            </div>
+                            <h1 style="color:var(--text-light); margin:0 0 5px 0; font-family:'Playfair Display', serif; font-size:2.2em;">${res.name}</h1>
+                            <p style="color:var(--accent-gold); margin:0 0 5px 0; font-weight:600; font-size:1.1em; letter-spacing:1px; text-transform:uppercase;">${res.title}</p>
+                            <p style="color:#94A3B8; margin:0 0 25px 0; font-size:1em;">${res.company}</p>
+                            
+                            <button class="btn-primary" style="background:#10B981; color:#fff; width:100%; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); margin-bottom:12px; padding:16px; font-size:1em;" 
+                                onclick="requestWarmIntroAction(this, '${safeProfileData}')">
+                                ✨ Send Warm Intro Request (1 Credit)
+                            </button>
+                            
+                            <button class="btn-secondary" style="width:100%; border-color:var(--secondary-slate); color:var(--secondary-slate); padding:14px;" onclick="window.location.reload()">
+                                Return to Portal
+                            </button>
                         </div>
-                        <p style="color:#94A3B8; font-size:0.75em; margin-top:35px; text-transform:uppercase; letter-spacing:1px;">Asia CEO Community<br>Official Partner Gateway</p>
-                    </div>
-                `;
+                    `;
+                } else {
+                    // ----------------------------------------------------
+                    // MODE 2: VENUE PARTNER SCAN (Green Light Door UI)
+                    // ----------------------------------------------------
+                    vUI.style.background = "#064E3B"; 
+                    vUI.innerHTML = `
+                        <div style="background:#fff; border-radius:24px; padding:40px 20px; width:100%; max-width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.6); animation: slideDownNav 0.4s ease-out; box-sizing: border-box;">
+                            ${pic}
+                            <div style="color:#10B981; font-size:4em; line-height:1; margin-bottom:10px; filter:drop-shadow(0 4px 10px rgba(16,185,129,0.3));">✅</div>
+                            <h1 style="color:#064E3B; margin:0 0 5px 0; font-family:'Playfair Display', serif; font-size:2.2em;">${res.name}</h1>
+                            <p style="color:#475569; margin:0 0 5px 0; font-weight:600; font-size:1.15em;">${res.title}</p>
+                            <p style="color:#94A3B8; margin:0 0 20px 0; font-size:1em;">${res.company}</p>
+                            
+                            <div style="display:inline-block; background:rgba(16,185,129,0.1); color:#10B981; padding:10px 20px; border-radius:30px; font-weight:bold; letter-spacing:1px; border:2px solid #10B981; font-size: 0.85em;">
+                                ${res.message} • ${res.tier}
+                            </div>
+                            <p style="color:#94A3B8; font-size:0.75em; margin-top:35px; text-transform:uppercase; letter-spacing:1px;">Asia CEO Community<br>Official Partner Gateway</p>
+
+                            <button class="btn-secondary" style="width:100%; margin-top:20px; border-color:#94A3B8; color:#94A3B8;" onclick="window.location.reload()">
+                                Close Scanner
+                            </button>
+                        </div>
+                    `;
+                }
             } else {
                 // RED LIGHT - EXPIRED OR INVALID
                 vUI.style.background = "#7F1D1D"; 
@@ -6787,6 +6828,9 @@ function triggerPartnerVerification(verifyId) {
                         <h2 style="color:#7F1D1D; margin:0 0 10px 0; font-family:'Playfair Display', serif; font-size:2em;">Access Denied</h2>
                         <p style="color:#475569; font-weight:600; font-size:1.1em; padding: 0 20px;">${(res ? res.error : "") || (res ? res.message : "") || "Invalid or Expired Membership"}</p>
                         <p style="color:#94A3B8; font-size:0.75em; margin-top:40px; text-transform:uppercase; letter-spacing:1px;">Asia CEO Community</p>
+                        <button class="btn-secondary" style="width:100%; margin-top:20px; border-color:#94A3B8; color:#94A3B8;" onclick="window.location.reload()">
+                            Close Scanner
+                        </button>
                     </div>
                 `;
             }
