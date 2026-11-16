@@ -731,10 +731,12 @@ html, body {
     .top-header { flex-direction: column !important; padding: 15px !important; }
     .omni-search-wrapper { max-width: 100% !important; margin-right: 0 !important; margin-bottom: 10px !important; }
     
-    /* 🔥 MOBILE SIDEBAR FIX: Stops tabs from squeezing and restores dropdown architecture */
+    /* 🔥 MOBILE SIDEBAR FIX: Forces Horizontal Scroll Ribbon */
     .sidebar-menu { 
         display: flex !important; 
+        flex-direction: row !important; /* <--- THIS FIXES THE UGLY VERTICAL STACKING */
         gap: 8px; 
+        align-items: center;
     }
     
     /* 🔥 FIX: Force buttons to maintain their shape and NOT shrink/clip text */
